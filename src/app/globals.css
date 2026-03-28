@@ -1,0 +1,252 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ═══════════════════════════════════════════
+   LIGHT THEME (default) — clean & friendly
+   brand identity: cyan + purple Praecox
+   ═══════════════════════════════════════════ */
+:root {
+  --brand: #0891b2;
+  --brand-2: #9333ea;
+  --brand-light: rgba(8, 145, 178, 0.08);
+  --brand-dark: #0e7490;
+
+  --inc: #059669;
+  --inc-bg: rgba(5, 150, 105, 0.08);
+  --exp: #e11d48;
+  --exp-bg: rgba(225, 29, 72, 0.08);
+
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface2: #ffffff;
+  --sidebar-bg: #ffffff;
+  --topbar-bg: #ffffff;
+  --border: #e2e8f0;
+  --border-subtle: #f1f5f9;
+
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --text-subtle: #cbd5e1;
+
+  --nav-label: #94a3b8;
+  --nav-hover-bg: rgba(8, 145, 178, 0.06);
+  --nav-active-bg: rgba(8, 145, 178, 0.1);
+  --nav-active-text: #0891b2;
+  --nav-text: #64748b;
+
+  --scrollbar: #e2e8f0;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+}
+
+/* ═══════════════════════════════════════════
+   DARK THEME — improved readability
+   softer darks, not pure black
+   ═══════════════════════════════════════════ */
+[data-theme="dark"] {
+  --brand: #22d3ee;
+  --brand-2: #c084fc;
+  --brand-light: rgba(34, 211, 238, 0.1);
+  --brand-dark: #06b6d4;
+
+  --inc: #34d399;
+  --inc-bg: rgba(52, 211, 153, 0.1);
+  --exp: #fb7185;
+  --exp-bg: rgba(251, 113, 133, 0.1);
+
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --surface2: #1e293b;
+  --sidebar-bg: #1e293b;
+  --topbar-bg: #1e293b;
+  --border: #334155;
+  --border-subtle: #1e293b;
+
+  --text: #f1f5f9;
+  --text-muted: #94a3b8;
+  --text-subtle: #334155;
+
+  --nav-label: #475569;
+  --nav-hover-bg: rgba(34, 211, 238, 0.06);
+  --nav-active-bg: rgba(34, 211, 238, 0.1);
+  --nav-active-text: #22d3ee;
+  --nav-text: #94a3b8;
+
+  --scrollbar: #334155;
+  --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+}
+
+/* ═══════════════════════════════════════════
+   BASE
+   ═══════════════════════════════════════════ */
+@layer base {
+  * { box-sizing: border-box; }
+  html { transition: background-color 0.2s, color 0.2s; }
+  body { background: var(--bg); color: var(--text); }
+  input, select, textarea { outline: none; color: var(--text); }
+}
+
+/* ═══════════════════════════════════════════
+   COMPONENTS
+   ═══════════════════════════════════════════ */
+@layer components {
+  .card {
+    @apply rounded-xl;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+  }
+
+  .input {
+    @apply w-full px-3 py-2.5 rounded-lg text-sm transition-colors;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .input::placeholder { color: var(--text-muted); }
+
+  /* Select dark mode fix */
+  select option { background: var(--surface); color: var(--text); }
+
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-4 py-2.5 text-white rounded-lg text-sm font-semibold active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed;
+    background: linear-gradient(135deg, var(--brand), var(--brand-2));
+    box-shadow: 0 2px 8px rgba(8,145,178,0.2);
+  }
+  .btn-primary:hover:not(:disabled) {
+    filter: brightness(1.08);
+    box-shadow: 0 4px 16px rgba(8,145,178,0.3);
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold active:scale-95 transition-all;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+  .btn-secondary:hover {
+    border-color: var(--brand);
+    color: var(--brand);
+    background: var(--nav-hover-bg);
+  }
+
+  .badge-inc {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold;
+    background: var(--inc-bg);
+    color: var(--inc);
+  }
+  .badge-exp {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold;
+    background: var(--exp-bg);
+    color: var(--exp);
+  }
+
+  .stat-card {
+    @apply rounded-xl p-5;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+  }
+  .stat-label { @apply text-xs font-medium mb-2; color: var(--text-muted); }
+  .stat-value { @apply text-2xl font-bold leading-none; }
+
+  .nav-item {
+    @apply flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer w-full text-left border-none bg-transparent;
+    color: var(--nav-text);
+  }
+  .nav-item:hover {
+    background: var(--nav-hover-bg);
+    color: var(--nav-active-text);
+  }
+  .nav-item.active {
+    background: var(--nav-active-bg);
+    color: var(--nav-active-text);
+    font-weight: 600;
+  }
+
+  .section-header { @apply flex items-center justify-between mb-4; }
+  .section-title { @apply font-bold text-base; color: var(--text); }
+}
+
+/* ═══════════════════════════════════════════
+   OVERRIDES (outside @layer to avoid order issues)
+   ═══════════════════════════════════════════ */
+.input:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-light);
+}
+
+/* Sidebar */
+.sidebar {
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border);
+  transition: background 0.2s;
+}
+
+/* Topbar */
+.topbar {
+  background: var(--topbar-bg);
+  border-bottom: 1px solid var(--border);
+  transition: background 0.2s;
+}
+
+/* App shell */
+.app-bg {
+  background: var(--bg);
+  transition: background 0.2s;
+}
+
+/* Theme toggle pill */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 3px;
+  gap: 2px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+.theme-toggle-btn {
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  transition: all 0.2s;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.theme-toggle-btn.active {
+  background: linear-gradient(135deg, var(--brand), var(--brand-2));
+  color: white;
+  box-shadow: 0 2px 6px rgba(8,145,178,0.25);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scrollbar); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border); }
+
+/* Glow for brand elements */
+.brand-glow {
+  filter: drop-shadow(0 0 12px rgba(8,145,178,0.4));
+}
+[data-theme="dark"] .brand-glow {
+  filter: drop-shadow(0 0 12px rgba(34,211,238,0.4));
+}
+
+/* Gradient brand text */
+.praecox-text {
+  background: linear-gradient(135deg, var(--brand), var(--brand-2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+@keyframes slideUp {
+  from { transform: translateX(-50%) translateY(20px); opacity: 0; }
+  to { transform: translateX(-50%) translateY(0); opacity: 1; }
+}
+.toast-enter { animation: slideUp 0.25s ease forwards; }
