@@ -57,20 +57,30 @@ export async function login(formData: FormData) {
   const password = formData.get('password') as string
 
   if (!email || !password) {
-    return { error: 'Email dan password wajib diisi' }
+    return { error: 'Email dan password wajib diisi', success: false }
   }
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password })
+  try {
+    // Add timeout untuk prevent infinite hang
+    const signInPromise = supabase.auth.signInWithPassword({ email, password })
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Login timeout - terlalu lama')), 10000)
+    )
 
-  if (error) {
-    if (error.message.includes('Invalid login')) {
-      return { error: 'Email atau password salah' }
+    const result = await Promise.race([signInPromise, timeoutPromise]) as any
+
+    if (result.error) {
+      if (result.error.message?.includes('Invalid login')) {
+        return { error: 'Email atau password salah', success: false }
+      }
+      return { error: result.error.message, success: false }
     }
-    return { error: error.message }
-  }
 
-  revalidatePath('/', 'layout')
-  redirect('/dashboard')
+    // Return success - client akan handle redirect
+    return { success: true, error: null }
+  } catch (err: any) {
+    return { error: err.message || 'Login gagal, coba lagi', success: false }
+  }
 }
 
 // ============================================================

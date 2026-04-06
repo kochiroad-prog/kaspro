@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react'
 import { tambahTransaksi } from '@/lib/actions/transaksi'
 import { getKas, getKategori, getUnitBisnis, getProyek } from '@/lib/actions/index'
+import { getCoaDetail } from '@/lib/actions/akuntansi'
+import { rekomendasiAkun } from '@/lib/actions/rag'
 import { hariIni } from '@/lib/utils'
-import type { Kas, Kategori, UnitBisnis, Proyek, TipeTransaksi } from '@/types'
+import type { Kas, Kategori, UnitBisnis, Proyek, TipeTransaksi, ChartOfAccounts, CoaSearchResult } from '@/types'
 
 export default function AddTxButton() {
   const [open, setOpen] = useState(false)
@@ -17,15 +19,20 @@ export default function AddTxButton() {
   const [katList, setKatList] = useState<Kategori[]>([])
   const [unitList, setUnitList] = useState<UnitBisnis[]>([])
   const [proyekList, setProyekList] = useState<Proyek[]>([])
+  const [coaList, setCoaList] = useState<ChartOfAccounts[]>([])
+  const [selectedCoaId, setSelectedCoaId] = useState('')
+  const [coaSuggestions, setCoaSuggestions] = useState<CoaSearchResult[]>([])
+  const [showCoaSearch, setShowCoaSearch] = useState(false)
 
   useEffect(() => {
     if (open) {
-      Promise.all([getKas(), getKategori(), getUnitBisnis(), getProyek()]).then(
-        ([k, kat, u, p]) => {
+      Promise.all([getKas(), getKategori(), getUnitBisnis(), getProyek(), getCoaDetail()]).then(
+        ([k, kat, u, p, coa]) => {
           setKasList(k.data ?? [])
           setKatList((kat.data ?? []).filter((c: Kategori) => c.tipe === tipe))
           setUnitList(u.data ?? [])
           setProyekList(p.data ?? [])
+          setCoaList(coa.data ?? [])
         }
       )
     }
@@ -156,6 +163,75 @@ export default function AddTxButton() {
                     <option value="">— Tidak ada proyek —</option>
                     {proyekList.map(p => <option key={p.id} value={p.id}>{p.nama}</option>)}
                   </select>
+                </div>
+
+                {/* Akun CoA (AI Search) */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Akun CoA (opsional)</label>
+                  {selectedCoaId ? (
+                    <div className="flex items-center gap-2 input">
+                      <span className="font-mono text-xs px-1.5 py-0.5 rounded bg-green-100 text-green-800">
+                        {coaList.find(c => c.id === selectedCoaId)?.kode ?? coaSuggestions.find(s => s.coa_id === selectedCoaId)?.kode}
+                      </span>
+                      <span className="text-sm flex-1 truncate">
+                        {coaList.find(c => c.id === selectedCoaId)?.nama ?? coaSuggestions.find(s => s.coa_id === selectedCoaId)?.nama}
+                      </span>
+                      <button type="button" onClick={() => setSelectedCoaId('')} className="text-xs text-red-500 hover:text-red-700">✕</button>
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <input
+                        placeholder="Cari akun: sewa, listrik, gaji..."
+                        className="input"
+                        value={showCoaSearch ? undefined : ''}
+                        onChange={async (e) => {
+                          const q = e.target.value
+                          setShowCoaSearch(true)
+                          if (q.length >= 2) {
+                            const res = await rekomendasiAkun(q)
+                            setCoaSuggestions(res.data ?? [])
+                          } else {
+                            setCoaSuggestions([])
+                          }
+                        }}
+                        onFocus={() => setShowCoaSearch(true)}
+                        onBlur={() => setTimeout(() => setShowCoaSearch(false), 200)}
+                      />
+                      {showCoaSearch && coaSuggestions.length > 0 && (
+                        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 max-h-48 overflow-y-auto">
+                          {coaSuggestions.map(s => (
+                            <button
+                              key={s.coa_id}
+                              type="button"
+                              onMouseDown={() => {
+                                setSelectedCoaId(s.coa_id)
+                                setShowCoaSearch(false)
+                              }}
+                              className="w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center gap-2 text-sm"
+                            >
+                              <span className="font-mono text-xs px-1 py-0.5 rounded bg-gray-100">{s.kode}</span>
+                              <span className="truncate">{s.nama}</span>
+                              {s.similarity >= 0.8 && (
+                                <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded bg-green-100 text-green-700">AI</span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {/* Manual fallback */}
+                      <select
+                        className="input mt-1.5 text-sm"
+                        value=""
+                        onChange={e => setSelectedCoaId(e.target.value)}
+                      >
+                        <option value="">— Pilih manual —</option>
+                        {coaList.map(c => (
+                          <option key={c.id} value={c.id}>{c.kode} - {c.nama}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  <input type="hidden" name="coa_id" value={selectedCoaId} />
                 </div>
 
                 {/* Catatan */}

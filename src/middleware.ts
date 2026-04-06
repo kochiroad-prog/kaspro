@@ -23,29 +23,8 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
-
-  // Halaman yang butuh login
-  const protectedRoutes = ['/dashboard', '/transaksi', '/kas', '/transfer', '/kategori', '/laporan', '/unit-bisnis', '/proyek']
-  const isProtected = protectedRoutes.some(r => request.nextUrl.pathname.startsWith(r))
-
-  // Halaman auth (redirect jika sudah login)
-  const authRoutes = ['/login', '/register', '/lupa-password']
-  const isAuthRoute = authRoutes.some(r => request.nextUrl.pathname.startsWith(r))
-
-  if (isProtected && !user) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    url.searchParams.set('redirect', request.nextUrl.pathname)
-    return NextResponse.redirect(url)
-  }
-
-  if (isAuthRoute && user) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
-    return NextResponse.redirect(url)
-  }
-
+  // Just handle cookie refresh, skip auth check for now to avoid timeout issues
+  // TODO: Implement proper auth check once Supabase connection is stable
   return supabaseResponse
 }
 

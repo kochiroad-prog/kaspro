@@ -15,6 +15,15 @@ const navItems = [
     ]
   },
   {
+    label: 'Akuntansi',
+    items: [
+      { href: '/akuntansi/coa', icon: '⊞', label: 'Chart of Accounts' },
+      { href: '/akuntansi/jurnal', icon: '☰', label: 'Jurnal Memorial' },
+      { href: '/akuntansi/neraca', icon: '⊟', label: 'Neraca' },
+      { href: '/akuntansi/laba-rugi', icon: '◎', label: 'Laba Rugi' },
+    ]
+  },
+  {
     label: 'Kelola',
     items: [
       { href: '/kategori', icon: '⊞', label: 'Kategori' },

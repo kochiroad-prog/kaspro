@@ -10,7 +10,7 @@ export const revalidate = 0
 export default async function TransaksiPage({
   searchParams,
 }: {
-  searchParams: { tipe?: string; kas_id?: string; kategori_id?: string; dari?: string; sampai?: string }
+  searchParams: Promise<{ tipe?: string; kas_id?: string; kategori_id?: string; dari?: string; sampai?: string }>
 }) {
   const sp = await searchParams
   const [txResult, kasResult, katResult, user] = await Promise.all([

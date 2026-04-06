@@ -1,6 +1,6 @@
 export const revalidate = 0
 
-const riwayatPembayaran = [
+const riwayatPembayaran: any[] = [
   // Data contoh — ganti dengan data dari database
 ]
 
