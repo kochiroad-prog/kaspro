@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { login } from '@/lib/actions/auth'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -14,9 +13,37 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
-    const result = await login(new FormData(e.currentTarget))
-    if (result?.error) {
-      setError(result.error)
+
+    const formData = new FormData(e.currentTarget)
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        setError(result.error || 'Login gagal')
+        setLoading(false)
+        return
+      }
+
+      if (result.success) {
+        // Login berhasil, redirect ke dashboard
+        router.push('/dashboard')
+      } else {
+        setError(result.error || 'Login gagal')
+        setLoading(false)
+      }
+    } catch (err: any) {
+      setError(err.message || 'Terjadi kesalahan, coba lagi')
       setLoading(false)
     }
   }
