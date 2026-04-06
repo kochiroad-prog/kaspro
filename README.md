@@ -83,6 +83,125 @@ Buka [http://localhost:3000](http://localhost:3000) → daftar akun baru → mul
 
 ---
 
+## 📚 KASPRO V2.0 Features Guide
+
+### **Akuntansi Menu** (`/akuntansi`)
+
+Sidebar → **Akuntansi** (menu baru di V2.0) terdiri dari 4 halaman:
+
+#### **1. Chart of Accounts** (`/akuntansi/coa`)
+
+**Chart of Accounts (CoA)** adalah standar akun dengan format **7-digit: X.X.XX.XXX**
+
+Struktur Klasifikasi:
+```
+1 = ASET (Current Assets, Fixed Assets)
+2 = KEWAJIBAN (Current Liabilities, Long-term Liabilities)
+3 = EKUITAS (Modal, Retained Earnings)
+4 = PENDAPATAN (Revenue, Sales)
+5 = HPP (Cost of Goods Sold)
+6 = BEBAN OPERASIONAL (Operating Expenses)
+7 = PENDAPATAN LAIN (Other Income)
+8 = BEBAN LAIN (Other Expenses)
+9 = PAJAK (Taxes)
+```
+
+**Default CoA** tersedia ~100+ akun standar. Kamu bisa:
+- ✅ Lihat daftar akun terstruktur (grouped by klasifikasi)
+- ✅ Tambah akun custom dengan validasi format X.X.XX.XXX
+- ✅ Link akun ke kas tertentu (untuk auto-journal)
+- ✅ Tipe akun: Header (1.0.00.000) → Sub Header (1.1.00.000) → Detail (1.1.11.001)
+
+#### **2. Jurnal Memorial** (`/akuntansi/jurnal`)
+
+**Jurnal Memorial** adalah pencatatan transaksi double-entry (Debit/Kredit).
+
+Setiap jurnal harus **balanced**: Total Debit = Total Kredit
+
+**Fitur:**
+- ✅ Buat jurnal dengan minimal 2 baris (1 debit, 1 kredit)
+- ✅ AI-powered account search (pattern-based recommendation)
+- ✅ Auto-validation: real-time debit/kredit balance checker
+- ✅ Status: Draft → Posted → Void
+- ✅ List jurnal dengan summary stats (Total, Posted, Draft, Void)
+- ✅ Post jurnal (status: draft → posted, lock untuk edit)
+- ✅ Void jurnal (reverse entries, maintain audit trail)
+
+**Auto-Journal** (saat transaksi kas dibuat):
+```
+Transaksi Kas (V1) → Trigger → Jurnal Memorial (V2) otomatis
+Contoh: Penjualan Rp 1.000.000 (kas)
+  D: 1.1.11.001 Kas Utama          1.000.000
+  K: 4.1.11.001 Pendapatan Usaha              1.000.000
+```
+
+#### **3. Neraca (Balance Sheet)** (`/akuntansi/neraca`)
+
+**Neraca** adalah laporan posisi keuangan per tanggal tertentu.
+
+Persamaan Akuntansi:
+```
+ASET = KEWAJIBAN + EKUITAS
+
+Contoh:
+Total Aset           : Rp 100.000.000
+Total Kewajiban      : Rp  30.000.000
+Total Ekuitas        : Rp  70.000.000
+                       ─────────────── +
+                       Rp 100.000.000 ✓ SEIMBANG
+```
+
+**Halaman Neraca menampilkan:**
+- ✅ Stat cards: Total Aset, Kewajiban, Ekuitas, Balance Indicator (🟢 Seimbang / 🔴 Tidak)
+- ✅ Dua kolom:
+  - **ASET** (Kiri): Aset Lancar + Aset Tetap
+  - **KEWAJIBAN + EKUITAS** (Kanan): Hutang + Modal
+- ✅ Detail setiap akun dengan saldo terkini
+- ✅ Real-time calculation dari jurnal yang sudah di-post
+
+#### **4. Laba Rugi (Income Statement)** (`/akuntansi/laba-rugi`)
+
+**Laba Rugi (P&L)** adalah laporan kinerja keuangan periode tertentu.
+
+Struktur:
+```
+PENDAPATAN (4.x)                    : Rp 50.000.000
+(─) HPP (5.x)                       : Rp 20.000.000
+────────────────────────────────────
+= LABA KOTOR                        : Rp 30.000.000
+
+(─) BEBAN OPERASIONAL (6.x)         : Rp 10.000.000
+────────────────────────────────────
+= LABA OPERASIONAL                  : Rp 20.000.000
+
+(+) PENDAPATAN LAIN (7.x)           : Rp  2.000.000
+(─) BEBAN LAIN (8.x)                : Rp  1.000.000
+────────────────────────────────────
+= LABA BERSIH                       : Rp 21.000.000 ✓ UNTUNG
+```
+
+**Halaman Laba Rugi menampilkan:**
+- ✅ Stat cards: Total Pendapatan, Laba Bersih, Profit/Loss Indicator
+- ✅ Struktur berjenjang: Pendapatan → HPP → Laba Kotor → Beban Ops → Laba Ops → Lain-lain → Laba Bersih
+- ✅ 🟢 Profit (Laba) atau 🔴 Loss (Rugi) indicator
+- ✅ Filterable by date range (dari - sampai)
+
+---
+
+### **V1 ↔ V2 Integration**
+
+**Kategori V1 → CoA V2 Mapping:**
+- Setiap kategori V1 di-map otomatis ke akun CoA V2
+- Contoh: Kategori "Gaji" → CoA "6.1.31.001 Gaji Karyawan"
+- Saat transaksi kas dibuat, auto-generate jurnal dengan mapping ini
+
+**Data Migration:**
+- Script `migration_v2_data.sql` handle full V1→V2 migration
+- 9 transaksi V1 kamu sudah dimigrasikan → 9 jurnal V2
+- Support dry-run preview sebelum actual migration
+
+---
+
 ## 📦 Deploy ke Vercel
 
 ### Cara Tercepat (Recommended)
