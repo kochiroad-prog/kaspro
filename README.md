@@ -409,4 +409,4 @@ MIT — bebas digunakan dan dikembangkan.
 
 ---
 
-Dibuat dengan ❤️ untuk UMKM Indonesia.
+Dibuat dengan cinta yang amat besar untuk Istriku Nia Permatasari ❤️ dan Calon Anakku ❤️ yang aku tunggu kedatangannya dengan sangat Bahagia - 6 April 2026
