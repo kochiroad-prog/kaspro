@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createServerClient } from '@supabase/ssr'
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,7 +13,28 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabase = await createClient()
+    // Create Supabase client with cookie handling
+    let response = NextResponse.json(
+      { success: true, error: null },
+      { status: 200 }
+    )
+
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll()
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              response.cookies.set(name, value, options)
+            })
+          },
+        },
+      }
+    )
 
     // Add timeout untuk prevent infinite hang
     const signInPromise = supabase.auth.signInWithPassword({ email, password })
@@ -36,11 +57,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Login berhasil
-    return NextResponse.json(
-      { success: true, error: null },
-      { status: 200 }
-    )
+    // Login berhasil - cookies sudah di-set melalui Supabase callback
+    return response
   } catch (err: any) {
     console.error('Login API error:', err)
     return NextResponse.json(
