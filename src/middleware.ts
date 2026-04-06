@@ -23,8 +23,9 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Just handle cookie refresh, skip auth check for now to avoid timeout issues
-  // TODO: Implement proper auth check once Supabase connection is stable
+  // Refresh auth session
+  await supabase.auth.getUser()
+
   return supabaseResponse
 }
 
