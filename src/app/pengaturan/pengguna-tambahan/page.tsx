@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react'
 import {
   getPenggunaTambahan, tambahPenggunaTambahan, updatePenggunaTambahan, hapusPenggunaTambahan,
-  defaultPermisiMenu,
+  
   type PeranPengguna, type PermisiKas, type PermisiMenu, type PenggunaTambahan,
 } from '@/lib/actions/pengguna-tambahan'
+import { defaultPermisiMenu } from '@/lib/pengguna-tambahan-types'
 import { getKas } from '@/lib/actions/index'
 import type { Kas } from '@/types'
 
@@ -319,7 +320,9 @@ export default function PenggunaTambahanPage() {
                   </label>
                   {permisiMenu.peralatan.aktif && (
                     <div className="ml-6 space-y-1.5">
-                      {[{ key: 'e_invoice' as const, label: 'e-Invoice' }, { key: 'catatan' as const, label: 'Catatan' }].map(pk => (
+                      {[{ key: 'e_invoice' as const, label: 'e-Invoice' },
+                        { key: 'catatan'   as const, label: 'Catatan' },
+                        { key: 'supplier'  as const, label: 'Supplier' }].map(pk => (
                         <label key={pk.key} className="flex items-center gap-2 cursor-pointer">
                           <input type="checkbox" checked={permisiMenu.peralatan[pk.key]} onChange={e => toggleMenuChild('peralatan', pk.key, e.target.checked)} className="w-4 h-4" style={{ accentColor: 'var(--brand)' }} />
                           <span className="text-sm" style={{ color: 'var(--text-muted)' }}>{pk.label}</span>
@@ -330,6 +333,30 @@ export default function PenggunaTambahanPage() {
                 </div>
               </div>
             )}
+
+
+                {/* ── Akuntansi ─────────────────────── */}
+                <div style={{ borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
+                  <label className="flex items-center gap-2 cursor-pointer mb-2">
+                    <input type="checkbox" checked={permisiMenu.akuntansi.aktif} onChange={e => toggleMenuParent('akuntansi', e.target.checked)} className="w-4 h-4" style={{ accentColor: 'var(--brand)' }} />
+                    <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Akuntansi</span>
+                  </label>
+                  {permisiMenu.akuntansi.aktif && (
+                    <div className="ml-6 space-y-1.5">
+                      {[
+                        { key: 'chart_of_accounts' as const, label: 'Chart of Accounts' },
+                        { key: 'jurnal_memorial'   as const, label: 'Jurnal Memorial' },
+                        { key: 'neraca'            as const, label: 'Neraca' },
+                        { key: 'laba_rugi'         as const, label: 'Laba Rugi' },
+                      ].map(pk => (
+                        <label key={pk.key} className="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" checked={permisiMenu.akuntansi[pk.key]} onChange={e => toggleMenuChild('akuntansi', pk.key, e.target.checked)} className="w-4 h-4" style={{ accentColor: 'var(--brand)' }} />
+                          <span className="text-sm" style={{ color: 'var(--text-muted)' }}>{pk.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
             <div className="flex items-center gap-3 pt-2">
               <button type="button" onClick={resetForm} className="px-4 py-2 rounded text-sm font-semibold border" style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>Batal</button>

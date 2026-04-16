@@ -40,6 +40,14 @@ export interface PermisiMenu {
     aktif: boolean
     e_invoice: boolean
     catatan: boolean
+    supplier: boolean
+  }
+  akuntansi: {
+    aktif: boolean
+    chart_of_accounts: boolean
+    jurnal_memorial: boolean
+    neraca: boolean
+    laba_rugi: boolean
   }
 }
 
@@ -51,6 +59,7 @@ export function defaultPermisiMenu(): PermisiMenu {
     laporan_bulanan: { ...defaultLaporan },
     laporan_tahunan: { ...defaultLaporan },
     laporan_custom: { ...defaultLaporan },
-    peralatan: { aktif: false, e_invoice: false, catatan: false },
+    peralatan: { aktif: false, e_invoice: false, catatan: false, supplier: false },
+    akuntansi: { aktif: false, chart_of_accounts: false, jurnal_memorial: false, neraca: false, laba_rugi: false },
   }
 }

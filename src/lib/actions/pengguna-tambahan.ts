@@ -5,7 +5,6 @@ import { createClient } from '@/lib/supabase/server'
 import type { PeranPengguna, PermisiKas, PermisiMenu } from '@/lib/pengguna-tambahan-types'
 
 export type { PeranPengguna, PermisiKas, PermisiMenu, PermisiMenuLaporan } from '@/lib/pengguna-tambahan-types'
-export { defaultPermisiMenu } from '@/lib/pengguna-tambahan-types'
 
 export interface PenggunaTambahan {
   id: string
