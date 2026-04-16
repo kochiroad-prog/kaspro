@@ -2,23 +2,19 @@
 
 import { useState, useEffect } from 'react'
 import {
-  getPenggunaTambahan,
-  tambahPenggunaTambahan,
-  updatePenggunaTambahan,
-  hapusPenggunaTambahan,
-  type PeranPengguna,
-  type PermisiKas,
-  type PenggunaTambahan,
+  getPenggunaTambahan, tambahPenggunaTambahan, updatePenggunaTambahan, hapusPenggunaTambahan,
+  defaultPermisiMenu,
+  type PeranPengguna, type PermisiKas, type PermisiMenu, type PenggunaTambahan,
 } from '@/lib/actions/pengguna-tambahan'
 import { getKas } from '@/lib/actions/index'
 import type { Kas } from '@/types'
 
 const PERAN_LIST: { value: PeranPengguna; label: string; desc: string }[] = [
-  { value: 'Read Only', label: 'Read Only', desc: 'Dapat membaca semua data tapi tidak bisa mengubah' },
-  { value: 'Writer', label: 'Writer', desc: 'Dapat mencatat transaksi sendiri, tidak bisa edit transaksi orang lain' },
+  { value: 'Read Only',  label: 'Read Only',  desc: 'Dapat membaca semua data tapi tidak bisa mengubah' },
+  { value: 'Writer',     label: 'Writer',     desc: 'Dapat mencatat transaksi sendiri, tidak bisa edit transaksi orang lain' },
   { value: 'Supervisor', label: 'Supervisor', desc: 'Akses Buku Kas & Peralatan, tidak bisa lihat Laporan & Saldo' },
-  { value: 'Manager', label: 'Manager', desc: 'Semua menu kecuali Pengaturan, bisa baca laporan & edit transaksi' },
-  { value: 'Custom', label: 'Custom', desc: 'Anda tentukan sendiri hak akses per Buku Kas' },
+  { value: 'Manager',    label: 'Manager',    desc: 'Semua menu kecuali Pengaturan, bisa baca laporan & edit transaksi' },
+  { value: 'Custom',     label: 'Custom',     desc: 'Anda tentukan sendiri hak akses per Buku Kas dan menu lainnya' },
 ]
 
 const PERMISI_KEYS: { key: keyof PermisiKas; label: string }[] = [
@@ -29,6 +25,30 @@ const PERMISI_KEYS: { key: keyof PermisiKas; label: string }[] = [
   { key: 'unduh_pdf',          label: 'Unduh file pdf' },
   { key: 'kirim_excel_email',  label: 'Kirim file excel sebagai lampiran email' },
   { key: 'kirim_pdf_email',    label: 'Kirim file pdf sebagai lampiran email' },
+]
+
+const PERMISI_LAPORAN_KEYS = [
+  { key: 'unduh_excel',       label: 'Unduh file excel' },
+  { key: 'unduh_pdf',         label: 'Unduh file pdf' },
+  { key: 'kirim_excel_email', label: 'Kirim file excel sebagai lampiran email' },
+  { key: 'kirim_pdf_email',   label: 'Kirim file pdf sebagai lampiran email' },
+] as const
+
+const MENU_LAPORAN = [
+  { key: 'laporan_harian'  as const, label: 'Laporan Harian' },
+  { key: 'laporan_bulanan' as const, label: 'Laporan Bulanan' },
+  { key: 'laporan_tahunan' as const, label: 'Laporan Tahunan' },
+  { key: 'laporan_custom'  as const, label: 'Laporan Custom' },
+]
+
+const PERMISI_PIUTANG_KEYS = [
+  { key: 'melihat_saldo'      as const, label: 'Melihat saldo' },
+  { key: 'catat_piutang'      as const, label: 'Catat piutang' },
+  { key: 'ubah_hapus_piutang' as const, label: 'Ubah atau hapus piutang' },
+  { key: 'unduh_excel'        as const, label: 'Unduh file excel' },
+  { key: 'unduh_pdf'          as const, label: 'Unduh file pdf' },
+  { key: 'kirim_excel_email'  as const, label: 'Kirim file excel sebagai lampiran email' },
+  { key: 'kirim_pdf_email'    as const, label: 'Kirim file pdf sebagai lampiran email' },
 ]
 
 function emptyPermisiKas(kas: Kas): PermisiKas {
@@ -48,7 +68,6 @@ export default function PenggunaTambahanPage() {
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState('')
   const [isErr, setIsErr] = useState(false)
-  const [isOwner, setIsOwner] = useState(true) // client-side assumption; server validates
 
   // Form state
   const [nama, setNama] = useState('')
@@ -56,6 +75,7 @@ export default function PenggunaTambahanPage() {
   const [password, setPassword] = useState('')
   const [peran, setPeran] = useState<PeranPengguna | ''>('')
   const [permisiList, setPermisiList] = useState<PermisiKas[]>([])
+  const [permisiMenu, setPermisiMenu] = useState<PermisiMenu>(defaultPermisiMenu())
 
   useEffect(() => {
     async function load() {
@@ -66,7 +86,6 @@ export default function PenggunaTambahanPage() {
     load()
   }, [])
 
-  // Sync permisi list saat kas berubah atau peran berubah ke Custom
   useEffect(() => {
     if (peran === 'Custom' && permisiList.length === 0) {
       setPermisiList(kasList.map(emptyPermisiKas))
@@ -75,21 +94,20 @@ export default function PenggunaTambahanPage() {
 
   function resetForm() {
     setNama(''); setEmail(''); setPassword(''); setPeran(''); setPermisiList([])
+    setPermisiMenu(defaultPermisiMenu())
     setEditingId(null); setShowForm(false); setMsg('')
   }
 
   function startEdit(u: PenggunaTambahan) {
     setEditingId(u.id)
-    setNama(u.nama)
-    setEmail(u.email)
-    setPassword('')
+    setNama(u.nama); setEmail(u.email); setPassword('')
     setPeran(u.peran)
     setPermisiList(u.permisi_custom ?? kasList.map(emptyPermisiKas))
+    setPermisiMenu(u.permisi_menu ?? defaultPermisiMenu())
     setShowForm(true)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  // Toggle seluruh Buku Kas
   function toggleKasAktif(kasId: string, val: boolean) {
     setPermisiList(prev => prev.map(p => {
       if (p.kas_id !== kasId) return p
@@ -102,6 +120,25 @@ export default function PenggunaTambahanPage() {
     setPermisiList(prev => prev.map(p => p.kas_id !== kasId ? p : { ...p, [key]: val }))
   }
 
+  // Toggle parent menu
+  function toggleMenuParent<K extends keyof PermisiMenu>(menuKey: K, val: boolean) {
+    setPermisiMenu(prev => {
+      const section = { ...prev[menuKey] } as any
+      // set all children to false when parent unchecked
+      Object.keys(section).forEach(k => { section[k] = k === 'aktif' ? val : val ? section[k] : false })
+      section.aktif = val
+      return { ...prev, [menuKey]: section }
+    })
+  }
+
+  function toggleMenuChild<K extends keyof PermisiMenu>(menuKey: K, childKey: string, val: boolean) {
+    setPermisiMenu(prev => {
+      const section = { ...prev[menuKey] } as any
+      section[childKey] = val
+      return { ...prev, [menuKey]: section }
+    })
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!peran) { setIsErr(true); setMsg('Pilih peran terlebih dahulu'); return }
@@ -110,6 +147,7 @@ export default function PenggunaTambahanPage() {
     const payload = {
       nama, email, password, peran: peran as PeranPengguna,
       permisi_custom: peran === 'Custom' ? permisiList : undefined,
+      permisi_menu: peran === 'Custom' ? permisiMenu : undefined,
     }
 
     const result = editingId
@@ -146,24 +184,17 @@ export default function PenggunaTambahanPage() {
           </div>
         </div>
         {!showForm && (
-          <button
-            onClick={() => setShowForm(true)}
-            className="px-4 py-2 rounded text-sm font-semibold text-white"
-            style={{ background: 'var(--brand)' }}
-          >
+          <button onClick={() => setShowForm(true)} className="px-4 py-2 rounded text-sm font-semibold text-white" style={{ background: 'var(--brand)' }}>
             Buat Pengguna Tambahan »
           </button>
         )}
       </div>
 
-      {/* Notif global */}
       {msg && !showForm && (
-        <div className={`p-3 rounded-lg text-sm ${isErr ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'}`}>
-          {msg}
-        </div>
+        <div className={`p-3 rounded-lg text-sm ${isErr ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'}`}>{msg}</div>
       )}
 
-      {/* ── FORM TAMBAH / EDIT ────────────────────────────── */}
+      {/* ── FORM ─────────────────────────────────────────────── */}
       {showForm && (
         <div className="card p-6">
           <div className="flex items-center justify-between mb-5">
@@ -174,107 +205,66 @@ export default function PenggunaTambahanPage() {
           </div>
 
           {msg && (
-            <div className={`mb-4 p-3 rounded-lg text-sm ${isErr ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'}`}>
-              {msg}
-            </div>
+            <div className={`mb-4 p-3 rounded-lg text-sm ${isErr ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'}`}>{msg}</div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Row 1: Nama + Peran */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text)' }}>Nama *</label>
-                <input
-                  value={nama} onChange={e => setNama(e.target.value)} required
-                  placeholder="Nama pengguna"
-                  className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2"
-                  style={{ borderColor: 'var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }}
-                />
+                <input value={nama} onChange={e => setNama(e.target.value)} required placeholder="Nama pengguna"
+                  className="w-full border rounded px-3 py-2 text-sm focus:outline-none"
+                  style={{ borderColor: 'var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }} />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text)' }}>Peran *</label>
-                <select
-                  value={peran}
-                  onChange={e => { setPeran(e.target.value as PeranPengguna); setPermisiList([]) }}
-                  required
-                  className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2"
-                  style={{ borderColor: 'var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }}
-                >
+                <select value={peran} onChange={e => { setPeran(e.target.value as PeranPengguna); setPermisiList([]) }} required
+                  className="w-full border rounded px-3 py-2 text-sm focus:outline-none"
+                  style={{ borderColor: 'var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }}>
                   <option value="">---</option>
-                  {PERAN_LIST.map(p => (
-                    <option key={p.value} value={p.value}>{p.label}</option>
-                  ))}
+                  {PERAN_LIST.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
                 </select>
                 {peran && peran !== 'Custom' && (
-                  <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                    {PERAN_LIST.find(p => p.value === peran)?.desc}
-                  </p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{PERAN_LIST.find(p => p.value === peran)?.desc}</p>
                 )}
               </div>
             </div>
 
-            {/* Row 2: Email + Password */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text)' }}>Email *</label>
-                <input
-                  type="email" value={email} onChange={e => setEmail(e.target.value)} required
-                  placeholder="email@example.com"
-                  className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2"
-                  style={{ borderColor: 'var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }}
-                />
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="email@example.com"
+                  className="w-full border rounded px-3 py-2 text-sm focus:outline-none"
+                  style={{ borderColor: 'var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }} />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text)' }}>Password</label>
-                <input
-                  type="password" value={password} onChange={e => setPassword(e.target.value)}
+                <input type="password" value={password} onChange={e => setPassword(e.target.value)}
                   placeholder={editingId ? 'Kosongkan jika tidak diganti' : 'Password pengguna'}
-                  className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2"
-                  style={{ borderColor: 'var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }}
-                />
-                {editingId && (
-                  <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                    Biarkan kosong jika password tidak ingin diganti
-                  </p>
-                )}
+                  className="w-full border rounded px-3 py-2 text-sm focus:outline-none"
+                  style={{ borderColor: 'var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }} />
               </div>
             </div>
 
-            {/* Custom Permissions per Buku Kas */}
+            {/* Custom Permissions */}
             {peran === 'Custom' && (
               <div className="space-y-4">
                 <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Pilih hak akses</p>
 
-                {kasList.length === 0 && (
-                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Belum ada Buku Kas. Tambahkan dulu di menu Pengaturan → Buku Kas.</p>
-                )}
-
-                {permisiList.map((perm, idx) => (
+                {/* ── Buku Kas ────────────────────────── */}
+                {kasList.length === 0 ? (
+                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Belum ada Buku Kas.</p>
+                ) : permisiList.map((perm) => (
                   <div key={perm.kas_id} style={{ borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
-                    {/* Header Buku Kas */}
                     <label className="flex items-center gap-2 cursor-pointer mb-2">
-                      <input
-                        type="checkbox"
-                        checked={perm.aktif}
-                        onChange={e => toggleKasAktif(perm.kas_id, e.target.checked)}
-                        className="w-4 h-4 accent-[var(--brand)]"
-                      />
-                      <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
-                        Buku Kas: {perm.nama_kas}
-                      </span>
+                      <input type="checkbox" checked={perm.aktif} onChange={e => toggleKasAktif(perm.kas_id, e.target.checked)} className="w-4 h-4" style={{ accentColor: 'var(--brand)' }} />
+                      <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Buku Kas: {perm.nama_kas}</span>
                     </label>
-
-                    {/* Sub-permissions */}
                     {perm.aktif && (
                       <div className="ml-6 space-y-1.5">
                         {PERMISI_KEYS.map(pk => (
                           <label key={pk.key} className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={Boolean(perm[pk.key])}
-                              onChange={e => togglePermisi(perm.kas_id, pk.key, e.target.checked)}
-                              className="w-4 h-4 accent-[var(--brand)]"
-                            />
+                            <input type="checkbox" checked={Boolean(perm[pk.key])} onChange={e => togglePermisi(perm.kas_id, pk.key, e.target.checked)} className="w-4 h-4" style={{ accentColor: 'var(--brand)' }} />
                             <span className="text-sm" style={{ color: 'var(--text-muted)' }}>{pk.label}</span>
                           </label>
                         ))}
@@ -282,23 +272,68 @@ export default function PenggunaTambahanPage() {
                     )}
                   </div>
                 ))}
+
+                {/* ── Buku Piutang ─────────────────── */}
+                <div style={{ borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
+                  <label className="flex items-center gap-2 cursor-pointer mb-2">
+                    <input type="checkbox" checked={permisiMenu.buku_piutang.aktif} onChange={e => toggleMenuParent('buku_piutang', e.target.checked)} className="w-4 h-4" style={{ accentColor: 'var(--brand)' }} />
+                    <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Buku Piutang</span>
+                  </label>
+                  {permisiMenu.buku_piutang.aktif && (
+                    <div className="ml-6 space-y-1.5">
+                      {PERMISI_PIUTANG_KEYS.map(pk => (
+                        <label key={pk.key} className="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" checked={Boolean(permisiMenu.buku_piutang[pk.key])} onChange={e => toggleMenuChild('buku_piutang', pk.key, e.target.checked)} className="w-4 h-4" style={{ accentColor: 'var(--brand)' }} />
+                          <span className="text-sm" style={{ color: 'var(--text-muted)' }}>{pk.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* ── Laporan ──────────────────────── */}
+                {MENU_LAPORAN.map(({ key, label }) => (
+                  <div key={key} style={{ borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
+                    <label className="flex items-center gap-2 cursor-pointer mb-2">
+                      <input type="checkbox" checked={permisiMenu[key].aktif} onChange={e => toggleMenuParent(key, e.target.checked)} className="w-4 h-4" style={{ accentColor: 'var(--brand)' }} />
+                      <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{label}</span>
+                    </label>
+                    {permisiMenu[key].aktif && (
+                      <div className="ml-6 space-y-1.5">
+                        {PERMISI_LAPORAN_KEYS.map(pk => (
+                          <label key={pk.key} className="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" checked={Boolean((permisiMenu[key] as any)[pk.key])} onChange={e => toggleMenuChild(key, pk.key, e.target.checked)} className="w-4 h-4" style={{ accentColor: 'var(--brand)' }} />
+                            <span className="text-sm" style={{ color: 'var(--text-muted)' }}>{pk.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {/* ── Peralatan ─────────────────────── */}
+                <div style={{ borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
+                  <label className="flex items-center gap-2 cursor-pointer mb-2">
+                    <input type="checkbox" checked={permisiMenu.peralatan.aktif} onChange={e => toggleMenuParent('peralatan', e.target.checked)} className="w-4 h-4" style={{ accentColor: 'var(--brand)' }} />
+                    <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Peralatan</span>
+                  </label>
+                  {permisiMenu.peralatan.aktif && (
+                    <div className="ml-6 space-y-1.5">
+                      {[{ key: 'e_invoice' as const, label: 'e-Invoice' }, { key: 'catatan' as const, label: 'Catatan' }].map(pk => (
+                        <label key={pk.key} className="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" checked={permisiMenu.peralatan[pk.key]} onChange={e => toggleMenuChild('peralatan', pk.key, e.target.checked)} className="w-4 h-4" style={{ accentColor: 'var(--brand)' }} />
+                          <span className="text-sm" style={{ color: 'var(--text-muted)' }}>{pk.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
-            {/* Actions */}
             <div className="flex items-center gap-3 pt-2">
-              <button
-                type="button" onClick={resetForm}
-                className="px-4 py-2 rounded text-sm font-semibold border"
-                style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
-              >
-                Batal
-              </button>
-              <button
-                type="submit" disabled={loading}
-                className="px-5 py-2 rounded text-sm font-semibold text-white disabled:opacity-60"
-                style={{ background: 'var(--brand)' }}
-              >
+              <button type="button" onClick={resetForm} className="px-4 py-2 rounded text-sm font-semibold border" style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>Batal</button>
+              <button type="submit" disabled={loading} className="px-5 py-2 rounded text-sm font-semibold text-white disabled:opacity-60" style={{ background: 'var(--brand)' }}>
                 {loading ? 'Menyimpan...' : 'Simpan'}
               </button>
             </div>
@@ -309,9 +344,6 @@ export default function PenggunaTambahanPage() {
       {/* ── INFO PERAN ──────────────────────────────────────── */}
       <div className="card p-6">
         <h2 className="text-base font-bold mb-3" style={{ color: 'var(--text)' }}>Jenis Peran</h2>
-        <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>
-          Pilih salah satu dari lima peran yang tersedia untuk membatasi akses pengguna tambahan. Hanya SuperAdmin yang dapat membuat, mengedit, atau menghapus pengguna tambahan.
-        </p>
         <div className="space-y-2 border-t pt-3" style={{ borderColor: 'var(--border)' }}>
           {PERAN_LIST.map(p => (
             <div key={p.value} className="flex gap-2">
@@ -322,49 +354,27 @@ export default function PenggunaTambahanPage() {
         </div>
       </div>
 
-      {/* ── DAFTAR PENGGUNA ─────────────────────────────────── */}
+      {/* ── DAFTAR ─────────────────────────────────────────── */}
       <div className="card p-6">
-        <h2 className="text-base font-bold mb-4 pb-3" style={{ color: 'var(--text)', borderBottom: '1px solid var(--border)' }}>
-          Daftar Pengguna Tambahan
-        </h2>
-
+        <h2 className="text-base font-bold mb-4 pb-3" style={{ color: 'var(--text)', borderBottom: '1px solid var(--border)' }}>Daftar Pengguna Tambahan</h2>
         {daftar.length === 0 ? (
           <p className="text-sm italic" style={{ color: 'var(--text-muted)' }}>Belum ada pengguna tambahan.</p>
         ) : (
           <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
             {daftar.map(u => (
               <div key={u.id} className="flex items-center gap-4 py-3">
-                <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
-                  style={{ background: 'var(--nav-active-bg)', color: 'var(--brand)', border: '1px solid var(--brand)' }}
-                >
+                <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+                  style={{ background: 'var(--nav-active-bg)', color: 'var(--brand)', border: '1px solid var(--brand)' }}>
                   {u.nama.slice(0, 2).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold truncate" style={{ color: 'var(--text)' }}>{u.nama}</p>
                   <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{u.email}</p>
                 </div>
-                <span
-                  className="text-xs font-semibold px-2 py-1 rounded-full"
-                  style={{ background: 'var(--nav-active-bg)', color: 'var(--brand)' }}
-                >
-                  {u.peran}
-                </span>
+                <span className="text-xs font-semibold px-2 py-1 rounded-full" style={{ background: 'var(--nav-active-bg)', color: 'var(--brand)' }}>{u.peran}</span>
                 <div className="flex gap-2">
-                  <button
-                    onClick={() => startEdit(u)}
-                    className="text-xs px-3 py-1.5 rounded border font-semibold"
-                    style={{ borderColor: 'var(--brand)', color: 'var(--brand)' }}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(u.id, u.nama)}
-                    className="text-xs px-3 py-1.5 rounded border font-semibold"
-                    style={{ borderColor: 'rgba(220,38,38,0.4)', color: '#dc2626' }}
-                  >
-                    Hapus
-                  </button>
+                  <button onClick={() => startEdit(u)} className="text-xs px-3 py-1.5 rounded border font-semibold" style={{ borderColor: 'var(--brand)', color: 'var(--brand)' }}>Edit</button>
+                  <button onClick={() => handleDelete(u.id, u.nama)} className="text-xs px-3 py-1.5 rounded border font-semibold" style={{ borderColor: 'rgba(220,38,38,0.4)', color: '#dc2626' }}>Hapus</button>
                 </div>
               </div>
             ))}

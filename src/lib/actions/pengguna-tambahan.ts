@@ -18,6 +18,48 @@ export interface PermisiKas {
   kirim_pdf_email: boolean
 }
 
+export interface PermisiMenuLaporan {
+  aktif: boolean
+  unduh_excel: boolean
+  unduh_pdf: boolean
+  kirim_excel_email: boolean
+  kirim_pdf_email: boolean
+}
+
+export interface PermisiMenu {
+  buku_piutang: {
+    aktif: boolean
+    melihat_saldo: boolean
+    catat_piutang: boolean
+    ubah_hapus_piutang: boolean
+    unduh_excel: boolean
+    unduh_pdf: boolean
+    kirim_excel_email: boolean
+    kirim_pdf_email: boolean
+  }
+  laporan_harian: PermisiMenuLaporan
+  laporan_bulanan: PermisiMenuLaporan
+  laporan_tahunan: PermisiMenuLaporan
+  laporan_custom: PermisiMenuLaporan
+  peralatan: {
+    aktif: boolean
+    e_invoice: boolean
+    catatan: boolean
+  }
+}
+
+export function defaultPermisiMenu(): PermisiMenu {
+  const defaultLaporan: PermisiMenuLaporan = { aktif: false, unduh_excel: false, unduh_pdf: false, kirim_excel_email: false, kirim_pdf_email: false }
+  return {
+    buku_piutang: { aktif: false, melihat_saldo: false, catat_piutang: false, ubah_hapus_piutang: false, unduh_excel: false, unduh_pdf: false, kirim_excel_email: false, kirim_pdf_email: false },
+    laporan_harian: { ...defaultLaporan },
+    laporan_bulanan: { ...defaultLaporan },
+    laporan_tahunan: { ...defaultLaporan },
+    laporan_custom: { ...defaultLaporan },
+    peralatan: { aktif: false, e_invoice: false, catatan: false },
+  }
+}
+
 export interface PenggunaTambahan {
   id: string
   user_id: string       // owner
@@ -25,6 +67,7 @@ export interface PenggunaTambahan {
   email: string
   peran: PeranPengguna
   permisi_custom: PermisiKas[] | null
+  permisi_menu: PermisiMenu | null
   aktif: boolean
   created_at: string
 }
@@ -51,6 +94,7 @@ export async function tambahPenggunaTambahan(input: {
   password: string
   peran: PeranPengguna
   permisi_custom?: PermisiKas[]
+  permisi_menu?: PermisiMenu
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -73,6 +117,7 @@ export async function tambahPenggunaTambahan(input: {
       password_hash: input.password, // simpan sebagai plain untuk mock; idealnya hash di server
       peran: input.peran,
       permisi_custom: input.permisi_custom ?? null,
+      permisi_menu: input.permisi_menu ?? null,
       aktif: true,
     })
     .select()
@@ -90,6 +135,7 @@ export async function updatePenggunaTambahan(id: string, input: {
   password?: string
   peran?: PeranPengguna
   permisi_custom?: PermisiKas[]
+  permisi_menu?: PermisiMenu
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -108,6 +154,7 @@ export async function updatePenggunaTambahan(id: string, input: {
   if (input.password)       updateData.password_hash = input.password
   if (input.peran)          updateData.peran = input.peran
   if (input.permisi_custom) updateData.permisi_custom = input.permisi_custom
+  if (input.permisi_menu)   updateData.permisi_menu = input.permisi_menu
 
   const { data, error } = await supabase
     .from('pengguna_tambahan')

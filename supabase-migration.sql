@@ -74,7 +74,9 @@ CREATE TABLE IF NOT EXISTS pengguna_tambahan (
   peran           TEXT NOT NULL DEFAULT 'read_only',
   -- peran: 'read_only' | 'writer' | 'supervisor' | 'manager' | 'custom'
   permisi_custom  JSONB DEFAULT '{}'::jsonb,
-  -- contoh: { "kas_id_1": { "lihat": true, "tambah": true, "edit": false, ... } }
+  -- contoh: [{ "kas_id": "...", "aktif": true, ... }]
+  permisi_menu    JSONB DEFAULT '{}'::jsonb,
+  -- contoh: { "buku_piutang": { "aktif": true, ... }, "laporan_harian": {...}, ... }
   aktif           BOOLEAN NOT NULL DEFAULT TRUE,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -244,16 +246,20 @@ CREATE POLICY "Piutang: user hapus"
 CREATE TABLE IF NOT EXISTS invoice (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id     UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  nomor       TEXT NOT NULL,
-  tanggal     DATE NOT NULL DEFAULT CURRENT_DATE,
-  pelanggan   TEXT NOT NULL,
-  items       JSONB NOT NULL DEFAULT '[]'::jsonb,
+  nomor              TEXT NOT NULL,
+  tanggal            DATE NOT NULL DEFAULT CURRENT_DATE,
+  jatuh_tempo        DATE,
+  pelanggan          TEXT NOT NULL,
+  items              JSONB NOT NULL DEFAULT '[]'::jsonb,
   -- items: [{ id, deskripsi, qty, hargaSatuan }]
-  total       NUMERIC(15, 2) NOT NULL DEFAULT 0,
-  catatan     TEXT NOT NULL DEFAULT '',
-  status      TEXT NOT NULL DEFAULT 'belum_lunas',
+  total              NUMERIC(15, 2) NOT NULL DEFAULT 0,
+  catatan            TEXT NOT NULL DEFAULT '',
+  status             TEXT NOT NULL DEFAULT 'belum_lunas',
   -- status: 'belum_lunas' | 'lunas'
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  logo_url           TEXT,
+  nama_perusahaan    TEXT NOT NULL DEFAULT '',
+  alamat_perusahaan  TEXT NOT NULL DEFAULT '',
+  created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_invoice_user_id  ON invoice(user_id);
@@ -286,6 +292,34 @@ CREATE POLICY "Invoice: user hapus"
 
 -- ────────────────────────────────────────────────────────────
 -- 8. TRIGGER: auto-update updated_at untuk supplier & catatan
+-- ────────────────────────────────────────────────────────────
+-- 9. ALTER TABLE — tambah kolom baru (aman dijalankan ulang)
+-- ────────────────────────────────────────────────────────────
+
+-- pengguna_tambahan: tambah permisi_menu
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='pengguna_tambahan' AND column_name='permisi_menu') THEN
+    ALTER TABLE pengguna_tambahan ADD COLUMN permisi_menu JSONB DEFAULT '{}'::jsonb;
+  END IF;
+END $$;
+
+-- invoice: tambah kolom baru (jatuh_tempo, logo, perusahaan)
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='invoice' AND column_name='jatuh_tempo') THEN
+    ALTER TABLE invoice ADD COLUMN jatuh_tempo DATE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='invoice' AND column_name='logo_url') THEN
+    ALTER TABLE invoice ADD COLUMN logo_url TEXT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='invoice' AND column_name='nama_perusahaan') THEN
+    ALTER TABLE invoice ADD COLUMN nama_perusahaan TEXT NOT NULL DEFAULT '';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='invoice' AND column_name='alamat_perusahaan') THEN
+    ALTER TABLE invoice ADD COLUMN alamat_perusahaan TEXT NOT NULL DEFAULT '';
+  END IF;
+END $$;
+
+
 -- ────────────────────────────────────────────────────────────
 CREATE OR REPLACE FUNCTION set_updated_at()
 RETURNS TRIGGER AS $$

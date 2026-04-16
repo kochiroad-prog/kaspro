@@ -15,21 +15,29 @@ export interface Invoice {
   user_id: string
   nomor: string
   tanggal: string
+  jatuh_tempo: string | null
   pelanggan: string
   items: InvoiceItem[]
   total: number
   catatan: string
   status: 'lunas' | 'belum_lunas'
+  logo_url: string | null
+  nama_perusahaan: string
+  alamat_perusahaan: string
   created_at: string
 }
 
 export interface InvoiceInput {
   nomor: string
   tanggal: string
+  jatuh_tempo?: string | null
   pelanggan: string
   items: InvoiceItem[]
   total: number
   catatan?: string
+  logo_url?: string | null
+  nama_perusahaan?: string
+  alamat_perusahaan?: string
 }
 
 export async function getInvoice() {
@@ -60,11 +68,15 @@ export async function tambahInvoice(input: InvoiceInput) {
       user_id: user.id,
       nomor: input.nomor,
       tanggal: input.tanggal,
+      jatuh_tempo: input.jatuh_tempo ?? null,
       pelanggan: input.pelanggan,
       items: input.items,
       total: input.total,
       catatan: input.catatan ?? '',
       status: 'belum_lunas',
+      logo_url: input.logo_url ?? null,
+      nama_perusahaan: input.nama_perusahaan ?? '',
+      alamat_perusahaan: input.alamat_perusahaan ?? '',
     })
     .select()
     .single()

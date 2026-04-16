@@ -1,0 +1,26 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          key_algorithm: ed25519
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            cd /home/apps/kaspro
+            git pull origin main
+            npm install --production=false
+            npm run build
+            pm2 restart kaspro || pm2 start npm --name "kaspro" -- start
