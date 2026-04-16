@@ -2,63 +2,10 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import type { PeranPengguna, PermisiKas, PermisiMenu } from '@/lib/pengguna-tambahan-types'
 
-export type PeranPengguna = 'Read Only' | 'Writer' | 'Supervisor' | 'Manager' | 'Custom'
-
-export interface PermisiKas {
-  kas_id: string
-  nama_kas: string
-  aktif: boolean
-  melihat_saldo: boolean
-  mencatat_transaksi: boolean
-  mengedit_transaksi: boolean
-  unduh_excel: boolean
-  unduh_pdf: boolean
-  kirim_excel_email: boolean
-  kirim_pdf_email: boolean
-}
-
-export interface PermisiMenuLaporan {
-  aktif: boolean
-  unduh_excel: boolean
-  unduh_pdf: boolean
-  kirim_excel_email: boolean
-  kirim_pdf_email: boolean
-}
-
-export interface PermisiMenu {
-  buku_piutang: {
-    aktif: boolean
-    melihat_saldo: boolean
-    catat_piutang: boolean
-    ubah_hapus_piutang: boolean
-    unduh_excel: boolean
-    unduh_pdf: boolean
-    kirim_excel_email: boolean
-    kirim_pdf_email: boolean
-  }
-  laporan_harian: PermisiMenuLaporan
-  laporan_bulanan: PermisiMenuLaporan
-  laporan_tahunan: PermisiMenuLaporan
-  laporan_custom: PermisiMenuLaporan
-  peralatan: {
-    aktif: boolean
-    e_invoice: boolean
-    catatan: boolean
-  }
-}
-
-export function defaultPermisiMenu(): PermisiMenu {
-  const defaultLaporan: PermisiMenuLaporan = { aktif: false, unduh_excel: false, unduh_pdf: false, kirim_excel_email: false, kirim_pdf_email: false }
-  return {
-    buku_piutang: { aktif: false, melihat_saldo: false, catat_piutang: false, ubah_hapus_piutang: false, unduh_excel: false, unduh_pdf: false, kirim_excel_email: false, kirim_pdf_email: false },
-    laporan_harian: { ...defaultLaporan },
-    laporan_bulanan: { ...defaultLaporan },
-    laporan_tahunan: { ...defaultLaporan },
-    laporan_custom: { ...defaultLaporan },
-    peralatan: { aktif: false, e_invoice: false, catatan: false },
-  }
-}
+export type { PeranPengguna, PermisiKas, PermisiMenu, PermisiMenuLaporan } from '@/lib/pengguna-tambahan-types'
+export { defaultPermisiMenu } from '@/lib/pengguna-tambahan-types'
 
 export interface PenggunaTambahan {
   id: string
@@ -114,7 +61,7 @@ export async function tambahPenggunaTambahan(input: {
       user_id: user.id,
       nama: input.nama,
       email: input.email,
-      password_hash: input.password, // simpan sebagai plain untuk mock; idealnya hash di server
+      password_hash: input.password,
       peran: input.peran,
       permisi_custom: input.permisi_custom ?? null,
       permisi_menu: input.permisi_menu ?? null,
