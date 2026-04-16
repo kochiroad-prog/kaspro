@@ -8,7 +8,7 @@ interface Message {
   timestamp: Date
 }
 
-const AI_ENDPOINT = process.env.NEXT_PUBLIC_AI_CHAT_URL || ''
+const AI_ENDPOINT = '/api/chat'
 
 const QUICK_PROMPTS = [
   'Bagaimana cara input transaksi?',
