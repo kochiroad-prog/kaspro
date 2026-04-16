@@ -127,3 +127,55 @@ export async function getUser() {
 
   return { ...user, profile }
 }
+
+// ============================================================
+// UPDATE PROFILE
+// ============================================================
+export async function updateProfile(formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Tidak terautentikasi' }
+
+  const nama        = formData.get('nama') as string
+  const nama_bisnis = formData.get('nama_bisnis') as string
+  const no_whatsapp = formData.get('no_whatsapp') as string
+  const telepon     = formData.get('telepon') as string
+  const alamat      = formData.get('alamat') as string
+  const provinsi    = formData.get('provinsi') as string
+  const kota        = formData.get('kota') as string
+  const pekerjaan   = formData.get('pekerjaan') as string
+  const penggunaan  = formData.get('penggunaan') as string
+  const zona_waktu  = formData.get('zona_waktu') as string
+  const mata_uang   = formData.get('mata_uang') as string
+
+  // Update auth metadata
+  const { error: metaError } = await supabase.auth.updateUser({
+    data: {
+      nama, nama_bisnis, no_whatsapp, telepon,
+      alamat, provinsi, kota, pekerjaan,
+      penggunaan, zona_waktu, mata_uang,
+    }
+  })
+  if (metaError) return { error: metaError.message }
+
+  // Update profiles table
+  const { error: profileError } = await supabase
+    .from('profiles')
+    .update({ nama, nama_bisnis, updated_at: new Date().toISOString() })
+    .eq('id', user.id)
+
+  if (profileError) return { error: profileError.message }
+
+  // Ganti password jika diisi
+  const password     = formData.get('password') as string
+  const passwordConf = formData.get('password_conf') as string
+  if (password) {
+    if (password !== passwordConf) return { error: 'Konfirmasi password tidak cocok' }
+    if (password.length < 6) return { error: 'Password minimal 6 karakter' }
+    const { error: passError } = await supabase.auth.updateUser({ password })
+    if (passError) return { error: passError.message }
+  }
+
+  revalidatePath('/pengaturan/akun')
+  return { success: true }
+}
