@@ -56,13 +56,6 @@ export default async function KasPage() {
           </div>
         ))}
 
-        {/* Tambah Kas Card */}
-        <div className="card p-5 border-2 border-dashed border-gray-200 flex items-center justify-center min-h-[160px]">
-          <div className="text-center">
-            <div className="text-3xl mb-2">+</div>
-            <p className="text-sm text-gray-500 font-medium">Tambah Kas Baru</p>
-          </div>
-        </div>
       </div>
 
       {/* Form Tambah Kas */}

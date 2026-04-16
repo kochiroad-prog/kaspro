@@ -75,7 +75,7 @@ export default function RegisterPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold mb-1.5" style={{ color: '#94a3b8' }}>Nama Lengkap</label>
+              <label className="block text-sm font-semibold mb-1.5" style={{ color: '#94a3b8' }}>Nama Lengkap *</label>
               <input name="nama" type="text" required placeholder="Budi Santoso" className="input" />
             </div>
             <div>
@@ -83,15 +83,26 @@ export default function RegisterPage() {
               <input name="nama_bisnis" type="text" placeholder="Nama bisnis (opsional)" className="input" />
             </div>
             <div>
-              <label className="block text-sm font-semibold mb-1.5" style={{ color: '#94a3b8' }}>Email</label>
+              <label className="block text-sm font-semibold mb-1.5" style={{ color: '#94a3b8' }}>Email *</label>
               <input name="email" type="email" required placeholder="nama@email.com" className="input" />
             </div>
             <div>
-              <label className="block text-sm font-semibold mb-1.5" style={{ color: '#94a3b8' }}>Password</label>
+              <label className="block text-sm font-semibold mb-1.5" style={{ color: '#94a3b8' }}>No WhatsApp *</label>
+              <input
+                name="no_whatsapp"
+                type="tel"
+                required
+                placeholder="08xxxxxxxxxx"
+                className="input"
+                pattern="[0-9+\-\s]+"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-1.5" style={{ color: '#94a3b8' }}>Password *</label>
               <input name="password" type="password" required placeholder="Minimal 6 karakter" className="input" />
             </div>
             <div>
-              <label className="block text-sm font-semibold mb-1.5" style={{ color: '#94a3b8' }}>Konfirmasi Password</label>
+              <label className="block text-sm font-semibold mb-1.5" style={{ color: '#94a3b8' }}>Konfirmasi Password *</label>
               <input name="konfirmasi_password" type="password" required placeholder="Ulangi password" className="input" />
             </div>
 

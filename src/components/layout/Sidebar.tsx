@@ -8,43 +8,70 @@ const navItems = [
   {
     label: 'Utama',
     items: [
-      { href: '/dashboard', icon: '▦', label: 'Dashboard' },
-      { href: '/transaksi', icon: '⟳', label: 'Transaksi' },
-      { href: '/kas', icon: '◈', label: 'Kas & Rekening' },
-      { href: '/transfer', icon: '⇄', label: 'Transfer Kas' },
+      { href: '/dashboard',  icon: '▦',  label: 'Dashboard' },
+      { href: '/transaksi',  icon: '⟳',  label: 'Transaksi' },
+      { href: '/kas',        icon: '◈',  label: 'Kas & Rekening' },
+      { href: '/transfer',   icon: '⇄',  label: 'Transfer Kas' },
     ]
   },
   {
     label: 'Akuntansi',
     items: [
-      { href: '/akuntansi/coa', icon: '⊞', label: 'Chart of Accounts' },
-      { href: '/akuntansi/jurnal', icon: '☰', label: 'Jurnal Memorial' },
-      { href: '/akuntansi/neraca', icon: '⊟', label: 'Neraca' },
+      { href: '/akuntansi/coa',       icon: '⊞', label: 'Chart of Accounts' },
+      { href: '/akuntansi/jurnal',    icon: '☰', label: 'Jurnal Memorial' },
+      { href: '/akuntansi/neraca',    icon: '⊟', label: 'Neraca' },
       { href: '/akuntansi/laba-rugi', icon: '◎', label: 'Laba Rugi' },
     ]
   },
   {
-    label: 'Kelola',
+    label: 'Laporan',
     items: [
-      { href: '/kategori', icon: '⊞', label: 'Kategori' },
-      { href: '/laporan', icon: '◎', label: 'Laporan' },
+      { href: '/laporan/harian',  icon: '📅', label: 'Harian' },
+      { href: '/laporan/bulanan', icon: '📆', label: 'Bulanan' },
+      { href: '/laporan/tahunan', icon: '🗓️', label: 'Tahunan' },
+      { href: '/laporan/custom',  icon: '⚙️', label: 'Custom' },
     ]
   },
   {
     label: 'Bisnis',
     items: [
       { href: '/unit-bisnis', icon: '⬡', label: 'Unit Bisnis' },
-      { href: '/proyek', icon: '◫', label: 'Proyek' },
+      { href: '/proyek',      icon: '◫', label: 'Proyek' },
+      { href: '/kategori',    icon: '⊞', label: 'Kategori' },
+    ]
+  },
+  {
+    label: 'Peralatan',
+    items: [
+      { href: '/peralatan/e-invoice', icon: '🧾', label: 'e-Invoice' },
+      { href: '/peralatan/catatan',   icon: '📝', label: 'Catatan' },
+      { href: '/peralatan/supplier',  icon: '🏭', label: 'Supplier' },
+    ]
+  },
+  {
+    label: 'Utang Piutang',
+    items: [
+      { href: '/utang-piutang/utang',   icon: '📕', label: 'Utang' },
+      { href: '/utang-piutang/piutang', icon: '📗', label: 'Piutang' },
+    ]
+  },
+  {
+    label: 'Produk',
+    items: [
+      { href: '/produk', icon: '🛍️', label: 'Produk Praecox' },
     ]
   },
   {
     label: 'Pengaturan',
     items: [
-      { href: '/pengaturan/akun', icon: '◉', label: 'Pengguna & Akun' },
+      { href: '/pengaturan/akun',              icon: '◉', label: 'Pengguna & Akun' },
       { href: '/pengaturan/pengguna-tambahan', icon: '◎', label: 'Pengguna Tambahan' },
-      { href: '/pengaturan/buku-kas', icon: '▣', label: 'Buku Kas' },
-      { href: '/pengaturan/kategori-buku-kas', icon: '⊟', label: 'Kategori Buku Kas' },
-      { href: '/pengaturan/pembayaran', icon: '◆', label: 'Pembayaran' },
+    ]
+  },
+  {
+    label: 'Premium',
+    items: [
+      { href: '/premium/pembayaran', icon: '💎', label: 'Upgrade Premium' },
     ]
   },
 ]
@@ -117,16 +144,16 @@ export default function Sidebar({ user }: { user: any }) {
 
       {/* Bottom */}
       <div className="p-3" style={{ borderTop: '1px solid var(--border)' }}>
-        <div
-          className="px-3 py-2 mb-2 rounded-lg"
+        <Link
+          href="/premium/pembayaran"
+          className="block px-3 py-2 mb-2 rounded-lg transition-opacity hover:opacity-80"
           style={{
-            background: 'var(--nav-active-bg)',
-            border: '1px solid var(--border)',
+            background: 'linear-gradient(135deg, var(--brand), var(--brand-2))',
           }}
         >
-          <p className="text-xs font-bold" style={{ color: 'var(--brand)' }}>Plan Gratis</p>
-          <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>Upgrade untuk fitur lengkap</p>
-        </div>
+          <p className="text-xs font-bold text-white">✨ Plan Gratis</p>
+          <p className="text-[10px] mt-0.5 text-white/70">Upgrade untuk fitur lengkap</p>
+        </Link>
         <form action={logout}>
           <button
             type="submit"
@@ -144,7 +171,7 @@ export default function Sidebar({ user }: { user: any }) {
   )
 }
 
-/* ── Globe SVG Logo ───────────────────────── */
+/* ── Logo SVG ───────────────────────────────────── */
 function PraecoxLogo({ size = 32, id }: { size?: number; id: string }) {
   const gid = `pg-${id}`
   return (

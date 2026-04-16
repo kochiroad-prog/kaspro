@@ -3,9 +3,8 @@
 import { useState, useEffect } from 'react'
 import { tambahJurnalMemorial } from '@/lib/actions/akuntansi'
 import { getCoa } from '@/lib/actions/akuntansi'
-import { getKas } from '@/lib/actions/index'
 import { rekomendasiAkun } from '@/lib/actions/rag'
-import type { ChartOfAccounts, Kas, JurnalDetailInput, CoaSearchResult } from '@/types'
+import type { ChartOfAccounts, JurnalDetailInput, CoaSearchResult } from '@/types'
 
 interface DetailRow {
   coa_id: string
@@ -14,11 +13,10 @@ interface DetailRow {
   debit: number
   kredit: number
   keterangan: string
-  kode_kas: string
 }
 
 const emptyRow = (): DetailRow => ({
-  coa_id: '', kode_akun: '', nama_akun: '', debit: 0, kredit: 0, keterangan: '', kode_kas: 'kosongan',
+  coa_id: '', kode_akun: '', nama_akun: '', debit: 0, kredit: 0, keterangan: '',
 })
 
 export default function JurnalMemorialForm() {
@@ -32,19 +30,14 @@ export default function JurnalMemorialForm() {
 
   // Data
   const [coaList, setCoaList] = useState<ChartOfAccounts[]>([])
-  const [kasList, setKasList] = useState<Kas[]>([])
   const [suggestions, setSuggestions] = useState<CoaSearchResult[]>([])
   const [activeSearchRow, setActiveSearchRow] = useState<number | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     async function loadData() {
-      const [coaRes, kasRes] = await Promise.all([
-        getCoa({ tipe_akun: 'detail', aktif: true }),
-        getKas(),
-      ])
+      const coaRes = await getCoa({ tipe_akun: 'detail', aktif: true })
       setCoaList(coaRes.data ?? [])
-      setKasList(kasRes.data ?? [])
     }
     loadData()
   }, [])
@@ -116,7 +109,7 @@ export default function JurnalMemorialForm() {
         debit: r.debit,
         kredit: r.kredit,
         keterangan: r.keterangan,
-        kode_kas: r.kode_kas,
+        kode_kas: 'kosongan', // default, kolom dihapus dari UI
       })),
     })
 
@@ -166,18 +159,17 @@ export default function JurnalMemorialForm() {
 
         {/* Header */}
         <div className="hidden sm:grid sm:grid-cols-12 gap-2 text-xs font-bold uppercase" style={{ color: 'var(--text-muted)' }}>
-          <div className="col-span-4">Kode Akun / Nama</div>
+          <div className="col-span-5">Kode Akun / Nama</div>
           <div className="col-span-2 text-right">Debit (Rp)</div>
           <div className="col-span-2 text-right">Kredit (Rp)</div>
-          <div className="col-span-2">Kode Kas</div>
-          <div className="col-span-1">Ket.</div>
+          <div className="col-span-2">Keterangan</div>
           <div className="col-span-1"></div>
         </div>
 
         {rows.map((row, idx) => (
           <div key={idx} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-start p-2 rounded-lg" style={{ background: 'var(--card-bg)', border: '1px solid var(--border)' }}>
             {/* Account selector with AI search */}
-            <div className="col-span-4 relative">
+            <div className="col-span-5 relative">
               {row.coa_id ? (
                 <div className="flex items-center gap-2">
                   <span className="font-mono text-xs px-1.5 py-0.5 rounded" style={{ background: 'var(--brand)', color: '#fff' }}>{row.kode_akun}</span>
@@ -253,24 +245,10 @@ export default function JurnalMemorialForm() {
               />
             </div>
 
-            {/* Kode Kas toggle */}
-            <div className="col-span-2">
-              <select
-                className="input text-sm"
-                value={row.kode_kas}
-                onChange={e => updateRow(idx, 'kode_kas', e.target.value)}
-              >
-                <option value="kosongan">Kosongan (Non-Kas)</option>
-                {kasList.map(k => (
-                  <option key={k.id} value={k.id}>{k.nama}</option>
-                ))}
-              </select>
-            </div>
-
             {/* Keterangan */}
-            <div className="col-span-1">
+            <div className="col-span-2">
               <input
-                placeholder="..."
+                placeholder="Keterangan..."
                 className="input text-sm"
                 value={row.keterangan}
                 onChange={e => updateRow(idx, 'keterangan', e.target.value)}

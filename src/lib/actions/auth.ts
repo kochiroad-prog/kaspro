@@ -14,8 +14,9 @@ export async function register(formData: FormData) {
   const email = formData.get('email') as string
   const password = formData.get('password') as string
   const nama_bisnis = formData.get('nama_bisnis') as string
+  const no_whatsapp = formData.get('no_whatsapp') as string
 
-  if (!nama || !email || !password) {
+  if (!nama || !email || !password || !no_whatsapp) {
     return { error: 'Semua field wajib diisi' }
   }
 
@@ -27,7 +28,7 @@ export async function register(formData: FormData) {
     email,
     password,
     options: {
-      data: { nama, nama_bisnis },
+      data: { nama, nama_bisnis, no_whatsapp },
     },
   })
 
