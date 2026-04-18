@@ -158,10 +158,10 @@ export async function updateProfile(formData: FormData) {
   })
   if (metaError) return { error: metaError.message }
 
-  // Update profiles table
+  // Update profiles table (termasuk no_whatsapp)
   const { error: profileError } = await supabase
     .from('profiles')
-    .update({ nama, nama_bisnis, updated_at: new Date().toISOString() })
+    .update({ nama, nama_bisnis, no_whatsapp, updated_at: new Date().toISOString() })
     .eq('id', user.id)
 
   if (profileError) return { error: profileError.message }
