@@ -14,6 +14,13 @@ export default function AddTxButton() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [nominalDisplay, setNominalDisplay] = useState('')
+
+  function formatNominal(val: string): string {
+    const digits = val.replace(/\D/g, '')
+    if (!digits) return ''
+    return parseInt(digits).toLocaleString('id-ID')
+  }
 
   const [kasList, setKasList] = useState<Kas[]>([])
   const [katList, setKatList] = useState<Kategori[]>([])
@@ -58,7 +65,7 @@ export default function AddTxButton() {
       setLoading(false)
     } else {
       setSuccess('Transaksi berhasil disimpan!')
-      setTimeout(() => { setOpen(false); setSuccess('') }, 1200)
+      setTimeout(() => { setOpen(false); setSuccess(''); setNominalDisplay('') }, 1200)
       setLoading(false)
     }
   }
@@ -66,7 +73,7 @@ export default function AddTxButton() {
   return (
     <>
       <button
-        onClick={() => setOpen(true)}
+        onClick={() => { setOpen(true); setNominalDisplay('') }}
         className="btn-primary"
       >
         <span className="text-lg leading-none">+</span>
@@ -81,7 +88,7 @@ export default function AddTxButton() {
           <div className="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-xl">
             <div className="flex items-center justify-between p-5 border-b border-gray-100">
               <h2 className="text-lg font-bold">Tambah Transaksi</h2>
-              <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+              <button onClick={() => { setOpen(false); setNominalDisplay('') }} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
             </div>
 
             <div className="p-5">
@@ -114,9 +121,11 @@ export default function AddTxButton() {
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-gray-500">Rp</span>
                     <input
                       name="jumlah"
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
                       required
-                      min="1"
+                      value={nominalDisplay}
+                      onChange={e => setNominalDisplay(formatNominal(e.target.value))}
                       placeholder="0"
                       className="input pl-10 text-xl font-bold"
                     />
