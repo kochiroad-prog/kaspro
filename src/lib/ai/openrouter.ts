@@ -1,5 +1,5 @@
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions'
-const MODEL = 'meta-llama/llama-3.1-8b-instruct:free'
+const MODEL = 'openai/gpt-4o-mini'
 
 export async function callAI(
   systemPrompt: string,
