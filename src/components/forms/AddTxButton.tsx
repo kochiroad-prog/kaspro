@@ -118,34 +118,32 @@ export default function AddTxButton() {
       </button>
 
       {open && (
-        // FIX: bottom sheet di mobile, centered di desktop
         <div
           className="fixed inset-0 bg-black/40 flex items-end md:items-center justify-center z-50 md:p-4"
           onClick={e => e.target === e.currentTarget && resetForm()}
         >
+          {/* Modal sheet — flex column agar footer bisa sticky */}
           <div
-            className="w-full md:max-w-md overflow-y-auto shadow-xl"
+            className="w-full md:max-w-md flex flex-col shadow-xl"
             style={{
               background: 'var(--surface)',
               borderRadius: '20px 20px 0 0',
-              // desktop: rounded semua sisi
+              maxHeight: 'calc(92vh - env(safe-area-inset-bottom, 0px))',
             }}
           >
             {/* Handle bar (mobile only) */}
-            <div className="flex justify-center pt-3 pb-1 md:hidden">
+            <div className="flex justify-center pt-3 pb-1 md:hidden flex-shrink-0">
               <div className="w-10 h-1 rounded-full" style={{ background: 'var(--border)' }} />
             </div>
 
-            <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-3 flex-shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
               <h2 className="text-base font-bold" style={{ color: 'var(--text)' }}>Tambah Transaksi</h2>
               <button onClick={resetForm} className="text-xl leading-none" style={{ color: 'var(--text-muted)' }}>✕</button>
             </div>
 
-            {/* Scrollable content — max 80vh minus bottom nav ~80px */}
-            <div
-              className="overflow-y-auto p-5"
-              style={{ maxHeight: 'calc(85vh - 80px)' }}
-            >
+            {/* Scrollable form fields — flex-1 agar tombol selalu kelihatan */}
+            <div className="overflow-y-auto flex-1 p-5">
               {/* Tipe Toggle */}
               <div className="flex rounded-xl overflow-hidden mb-5" style={{ border: '1px solid var(--border)' }}>
                 <button
@@ -175,7 +173,7 @@ export default function AddTxButton() {
               {error && <div className="mb-4 p-3 rounded-lg text-sm" style={{ background: 'rgba(220,38,38,0.08)', color: '#dc2626' }}>{error}</div>}
               {success && <div className="mb-4 p-3 rounded-lg text-sm font-semibold" style={{ background: 'rgba(22,163,74,0.08)', color: '#16a34a' }}>{success}</div>}
 
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form id="add-tx-form" onSubmit={handleSubmit} className="space-y-4">
                 {/* Jumlah */}
                 <div>
                   <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--text)' }}>Jumlah</label>
@@ -331,13 +329,29 @@ export default function AddTxButton() {
                   <input type="hidden" name="coa_id" value={selectedCoaId} />
                 </div>
 
-                {/* Submit — dengan padding bawah ekstra untuk mobile nav */}
-                <div className="pt-2 pb-6">
-                  <button type="submit" disabled={loading} className="btn-primary w-full justify-center py-3.5 text-base">
-                    {loading ? 'Menyimpan...' : '✓ Simpan Transaksi'}
-                  </button>
-                </div>
               </form>
+            </div>
+
+            {/* Sticky footer — tombol simpan selalu terlihat */}
+            <div
+              className="flex-shrink-0 px-5 pt-3 pb-5"
+              style={{
+                borderTop: '1px solid var(--border)',
+                paddingBottom: 'calc(20px + env(safe-area-inset-bottom, 0px))',
+                background: 'var(--surface)',
+              }}
+            >
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => {
+                  const form = document.querySelector('#add-tx-form') as HTMLFormElement
+                  if (form) form.requestSubmit()
+                }}
+                className="btn-primary w-full justify-center py-3.5 text-base"
+              >
+                {loading ? 'Menyimpan...' : '✓ Simpan Transaksi'}
+              </button>
             </div>
           </div>
         </div>
