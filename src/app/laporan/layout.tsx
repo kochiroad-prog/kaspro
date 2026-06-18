@@ -4,7 +4,6 @@ import { getUser } from '@/lib/actions/auth'
 import Sidebar from '@/components/layout/Sidebar'
 import Topbar from '@/components/layout/Topbar'
 import MobileNav from '@/components/layout/MobileNav'
-import AiChat from '@/components/ai/AiChat'
 
 const subMenu = [
   { href: '/laporan/harian',  icon: '1', label: 'Harian' },
@@ -60,7 +59,7 @@ export default async function LaporanLayout({ children }: { children: React.Reac
         </div>
       </div>
       <MobileNav />
-      <AiChat />
+
     </div>
   )
 }

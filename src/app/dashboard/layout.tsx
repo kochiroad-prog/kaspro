@@ -3,7 +3,6 @@ import { getUser } from '@/lib/actions/auth'
 import Sidebar from '@/components/layout/Sidebar'
 import Topbar from '@/components/layout/Topbar'
 import MobileNav from '@/components/layout/MobileNav'
-import AiChat from '@/components/ai/AiChat'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const user = await getUser()
@@ -19,7 +18,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </main>
       </div>
       <MobileNav />
-      <AiChat />
+
     </div>
   )
 }
