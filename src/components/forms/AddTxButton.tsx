@@ -118,7 +118,7 @@ export default function AddTxButton() {
 
       {open && (
         <div
-          className="fixed inset-0 bg-black/40 flex items-end md:items-center justify-center z-50 md:p-4"
+          className="fixed inset-0 bg-black/40 flex items-end md:items-center justify-center z-[60] md:p-4"
           onClick={e => e.target === e.currentTarget && resetForm()}
         >
           {/* Sheet — flex column agar footer bisa sticky */}
