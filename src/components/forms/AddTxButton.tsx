@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { tambahTransaksi } from '@/lib/actions/transaksi'
 import { getKas, getKategori, getUnitBisnis, getProyek } from '@/lib/actions/index'
 import { getCoaDetail } from '@/lib/actions/akuntansi'
@@ -30,10 +30,15 @@ export default function AddTxButton() {
   const [selectedCoaId, setSelectedCoaId] = useState('')
   const [coaSuggestions, setCoaSuggestions] = useState<CoaSearchResult[]>([])
   const [showCoaSearch, setShowCoaSearch] = useState(false)
+  const [aiKategoriId, setAiKategoriId] = useState<string | null>(null)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [catatanValue, setCatatanValue] = useState('')
+  const aiDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     if (open) {
-      Promise.all([getKas(), getKategori(), getUnitBisnis(), getProyek(), getCoaDetail()]).then(
+      setAiKategoriId(null)
+    Promise.all([getKas(), getKategori(), getUnitBisnis(), getProyek(), getCoaDetail()]).then(
         ([k, kat, u, p, coa]) => {
           setKasList(k.data ?? [])
           setKatList((kat.data ?? []).filter((c: Kategori) => c.tipe === tipe))
@@ -44,6 +49,21 @@ export default function AddTxButton() {
       )
     }
   }, [open, tipe])
+
+  async function handleAutoKategori(catatan: string) {
+    if (catatan.length < 3 || katList.length === 0) return
+    setAiLoading(true)
+    try {
+      const res = await fetch('/api/ai/kategorisasi', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ catatan, tipe, kategoriList: katList }),
+      })
+      const data = await res.json()
+      if (data.kategori_id) setAiKategoriId(data.kategori_id)
+    } catch {}
+    setAiLoading(false)
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -136,8 +156,18 @@ export default function AddTxButton() {
                   {/* Kategori */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-1.5">Kategori</label>
-                    <select name="kategori_id" required className="input">
-                      {katList.map(k => <option key={k.id} value={k.id}>{k.ikon} {k.nama}</option>)}
+                    <select
+                      name="kategori_id"
+                      required
+                      className="input"
+                      value={aiKategoriId ?? undefined}
+                      onChange={e => setAiKategoriId(e.target.value)}
+                    >
+                      {katList.map(k => (
+                        <option key={k.id} value={k.id}>
+                          {k.ikon} {k.nama}{aiKategoriId === k.id ? ' ✦' : ''}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   {/* Kas */}
@@ -245,8 +275,24 @@ export default function AddTxButton() {
 
                 {/* Catatan */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Catatan</label>
-                  <input name="catatan" type="text" placeholder="Keterangan transaksi..." className="input" />
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center gap-2">
+                    Catatan
+                    {aiLoading && <span className="text-[10px] font-normal px-1.5 py-0.5 rounded-full animate-pulse" style={{ background: 'var(--brand-light)', color: 'var(--brand)' }}>AI...</span>}
+                    {aiKategoriId && !aiLoading && <span className="text-[10px] font-normal px-1.5 py-0.5 rounded-full" style={{ background: '#dcfce7', color: '#16a34a' }}>✓ Kategori otomatis</span>}
+                  </label>
+                  <input
+                    name="catatan"
+                    type="text"
+                    placeholder="Ketik keterangan, AI akan pilih kategori otomatis..."
+                    className="input"
+                    value={catatanValue}
+                    onChange={e => {
+                      const val = e.target.value
+                      setCatatanValue(val)
+                      if (aiDebounceRef.current) clearTimeout(aiDebounceRef.current)
+                      aiDebounceRef.current = setTimeout(() => handleAutoKategori(val), 800)
+                    }}
+                  />
                 </div>
 
                 <button type="submit" disabled={loading} className="btn-primary w-full justify-center py-3 text-base">

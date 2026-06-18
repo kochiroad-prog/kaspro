@@ -5,13 +5,14 @@ import { formatRupiah, formatTanggal } from '@/lib/utils'
 import AddTxButton from '@/components/forms/AddTxButton'
 import ExportPanel from '@/components/transaksi/ExportPanel'
 import TransaksiTable from '@/components/transaksi/TransaksiTable'
+import SmartSearch from '@/components/transaksi/SmartSearch'
 
 export const revalidate = 0
 
 export default async function TransaksiPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tipe?: string; kas_id?: string; kategori_id?: string; dari?: string; sampai?: string }>
+  searchParams: Promise<{ tipe?: string; kas_id?: string; kategori_id?: string; dari?: string; sampai?: string; sort?: string; limit?: string; q?: string }>
 }) {
   const sp = await searchParams
   const [txResult, kasResult, katResult, user] = await Promise.all([
@@ -21,7 +22,7 @@ export default async function TransaksiPage({
       kategori_id: sp.kategori_id,
       dari_tanggal: sp.dari,
       sampai_tanggal: sp.sampai,
-      limit: 100,
+      limit: sp.limit ? parseInt(sp.limit) : 100,
     }),
     getKas(),
     getKategori(),
@@ -58,6 +59,17 @@ export default async function TransaksiPage({
           <AddTxButton />
         </div>
       </div>
+
+      {sp.q && (
+        <div className="flex items-center gap-2 p-3 rounded-xl text-sm" style={{ background: 'var(--brand-light)', color: 'var(--brand)' }}>
+          <span>🤖</span>
+          <span>Hasil untuk: <strong>"{sp.q}"</strong></span>
+          <a href="/transaksi" className="ml-auto text-xs underline opacity-70">Reset</a>
+        </div>
+      )}
+
+      {/* Smart Search */}
+      <SmartSearch />
 
       {/* Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

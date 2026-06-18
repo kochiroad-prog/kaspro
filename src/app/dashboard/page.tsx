@@ -4,6 +4,7 @@ import { getKas, getProyek, getUnitBisnis, getLaporanBulanan } from '@/lib/actio
 import { formatRupiah } from '@/lib/utils'
 import AddTxButton from '@/components/forms/AddTxButton'
 import WeeklyChart from '@/components/charts/WeeklyChart'
+import AnomalyAlert from '@/components/dashboard/AnomalyAlert'
 import { MonthlyChart } from '@/components/charts/MonthlyChart'
 
 export const revalidate = 0
@@ -13,7 +14,7 @@ export default async function DashboardPage() {
 
   const [statsV2, txResult, kasResult, proyekResult, unitResult, laporanResult] = await Promise.all([
     getDashboardStatsV2(),
-    getTransaksi({ limit: 8 }),
+    getTransaksi({ limit: 50 }),
     getKas(),
     getProyek(),
     getUnitBisnis(),
@@ -45,6 +46,8 @@ export default async function DashboardPage() {
             {new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </p>
         </div>
+      <AnomalyAlert transaksi={txForAnomaly} />
+
         <AddTxButton />
       </div>
 
