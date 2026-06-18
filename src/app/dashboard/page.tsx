@@ -5,6 +5,7 @@ import { formatRupiah } from '@/lib/utils'
 import AddTxButton from '@/components/forms/AddTxButton'
 import WeeklyChart from '@/components/charts/WeeklyChart'
 import AnomalyAlert from '@/components/dashboard/AnomalyAlert'
+import SmartSearch from '@/components/transaksi/SmartSearch'
 import { MonthlyChart } from '@/components/charts/MonthlyChart'
 
 export const revalidate = 0
@@ -52,6 +53,9 @@ export default async function DashboardPage() {
 
       {/* ── ANOMALY ALERT ───────────────────────────────────── */}
       <AnomalyAlert transaksi={txForAnomaly} />
+
+      {/* ── SMART SEARCH ────────────────────────────────────── */}
+      <SmartSearch />
 
       {/* ── SECTION 1: HERO KPI (1 besar + 4 cards) ────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
@@ -321,14 +325,4 @@ export default async function DashboardPage() {
             ))}
             <div className="pt-2 flex justify-between items-center" style={{ borderTop: '2px solid var(--border)' }}>
               <span className="text-sm font-bold" style={{ color: 'var(--text)' }}>Laba Bersih</span>
-              <span className="text-xl font-bold font-mono" style={{ color: s.laba_bersih_bulan_ini >= 0 ? 'var(--inc)' : 'var(--exp)' }}>
-                {formatRupiah(s.laba_bersih_bulan_ini)}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  )
-}
+              <span className="text-xl font-bold font-mono" st

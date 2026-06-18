@@ -5,7 +5,6 @@ import { formatRupiah, formatTanggal } from '@/lib/utils'
 import AddTxButton from '@/components/forms/AddTxButton'
 import ExportPanel from '@/components/transaksi/ExportPanel'
 import TransaksiTable from '@/components/transaksi/TransaksiTable'
-import SmartSearch from '@/components/transaksi/SmartSearch'
 
 export const revalidate = 0
 
@@ -67,10 +66,6 @@ export default async function TransaksiPage({
           <a href="/transaksi" className="ml-auto text-xs underline opacity-70">Reset</a>
         </div>
       )}
-
-      {/* Smart Search */}
-      <SmartSearch />
-
       {/* Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="stat-card">

@@ -4,38 +4,50 @@ import { callAI } from '@/lib/ai/openrouter'
 export async function POST(req: NextRequest) {
   try {
     const { query } = await req.json()
-    if (!query || query.length < 3) return NextResponse.json({ filters: {} })
+    if (!query || query.length < 2) return NextResponse.json({ filters: {} })
 
     const today = new Date().toISOString().slice(0, 10)
-    const firstOfMonth = today.slice(0, 8) + '01'
-    const firstOfYear = today.slice(0, 4) + '-01-01'
-
-    // Hitung "bulan lalu"
     const d = new Date()
+    const firstOfMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`
+    const firstOfYear = `${d.getFullYear()}-01-01`
     d.setMonth(d.getMonth() - 1)
     const prevMonthStart = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`
-    const prevMonthEnd = today.slice(0, 8) + '01' // awal bulan ini = akhir bulan lalu range
+    const prevMonthEnd = firstOfMonth
 
-    const system = `Kamu adalah parser query pencarian transaksi keuangan.
-Hari ini: ${today}. Awal bulan ini: ${firstOfMonth}. Awal tahun ini: ${firstOfYear}.
-Bulan lalu: ${prevMonthStart} sampai ${prevMonthEnd}.
+    const system = `Kamu adalah parser query pencarian transaksi keuangan Indonesia.
+Hari ini: ${today}
+Awal bulan ini: ${firstOfMonth}
+Awal tahun ini: ${firstOfYear}
+Bulan lalu: ${prevMonthStart} s/d ${prevMonthEnd}
 
-Ubah query user menjadi JSON filter berikut (hanya sertakan field yang relevan):
-{
-  "tipe": "pemasukan" | "pengeluaran" | null,
-  "dari": "YYYY-MM-DD" | null,
-  "sampai": "YYYY-MM-DD" | null,
-  "sort": "terbesar" | "terkecil" | "terbaru" | null,
-  "limit": number | null
-}
+Tugas: ubah query menjadi JSON filter. Kembalikan HANYA JSON valid, tanpa markdown, tanpa komentar.
+Schema (sertakan hanya field yang relevan, null jika tidak):
+{"tipe":"pemasukan"|"pengeluaran"|null,"dari":"YYYY-MM-DD"|null,"sampai":"YYYY-MM-DD"|null,"sort":"terbesar"|"terkecil"|"terbaru"|null,"limit":number|null}`
 
-Balas HANYA JSON, tanpa markdown, tanpa penjelasan.`
+    const raw = await callAI(system, query, 150)
 
-    const result = await callAI(system, query, 128)
-
-    // Parse JSON dari hasil AI
-    const cleaned = result.replace(/```json|```/g, '').trim()
-    const filters = JSON.parse(cleaned)
+    // Bersihkan dan parse JSON
+    let filters: Record<string, any> = {}
+    try {
+      const cleaned = raw
+        .replace(/```json/gi, '')
+        .replace(/```/g, '')
+        .replace(/\/\/.*/g, '')
+        .trim()
+      filters = JSON.parse(cleaned)
+    } catch {
+      // Fallback: parse manual dari query
+      const q = query.toLowerCase()
+      if (q.includes('masuk') || q.includes('pemasukan')) filters.tipe = 'pemasukan'
+      else if (q.includes('keluar') || q.includes('pengeluaran') || q.includes('beban')) filters.tipe = 'pengeluaran'
+      if (q.includes('bulan ini')) { filters.dari = firstOfMonth; filters.sampai = today }
+      else if (q.includes('bulan lalu')) { filters.dari = prevMonthStart; filters.sampai = prevMonthEnd }
+      else if (q.includes('tahun ini')) { filters.dari = firstOfYear; filters.sampai = today }
+      if (q.includes('terbesar') || q.includes('terbanyak')) filters.sort = 'terbesar'
+      else if (q.includes('terkecil')) filters.sort = 'terkecil'
+      const matchNum = q.match(/(\d+)\s*(transaksi|data|terakhir)/)
+      if (matchNum) filters.limit = parseInt(matchNum[1])
+    }
 
     return NextResponse.json({ filters })
   } catch (e: any) {
