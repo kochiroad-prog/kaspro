@@ -102,7 +102,7 @@ export default function AiChat() {
       {/* ── Floating Button ───────────────────────────── */}
       <button
         onClick={() => setOpen(o => !o)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110"
+        className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-50 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110"
         style={{
           background: open
             ? 'var(--exp)'
@@ -122,9 +122,9 @@ export default function AiChat() {
 
       {/* ── Chat Panel ────────────────────────────────── */}
       <div
-        className="fixed bottom-24 right-6 z-50 flex flex-col transition-all duration-300 origin-bottom-right"
+        className="fixed bottom-36 right-2 md:bottom-24 md:right-6 z-50 flex flex-col transition-all duration-300 origin-bottom-right"
         style={{
-          width: '360px',
+          width: 'min(360px, calc(100vw - 16px))',
           maxHeight: '520px',
           transform: open ? 'scale(1)' : 'scale(0.8)',
           opacity: open ? 1 : 0,

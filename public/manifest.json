@@ -3,6 +3,7 @@
   "short_name": "VALTO",
   "description": "Aplikasi kas dan akuntansi bisnis yang mudah digunakan",
   "start_url": "/dashboard",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#f5f3ff",
   "theme_color": "#6366f1",
@@ -19,15 +20,6 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/screenshot-mobile.png",
-      "sizes": "390x844",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Dashboard VALTO"
     }
   ],
   "categories": ["finance", "business", "productivity"],
