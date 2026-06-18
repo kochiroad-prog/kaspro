@@ -325,4 +325,14 @@ export default async function DashboardPage() {
             ))}
             <div className="pt-2 flex justify-between items-center" style={{ borderTop: '2px solid var(--border)' }}>
               <span className="text-sm font-bold" style={{ color: 'var(--text)' }}>Laba Bersih</span>
-              <span className="text-xl font-bold font-mono" st
+              <span className="text-xl font-bold font-mono" style={{ color: s.laba_bersih_bulan_ini >= 0 ? 'var(--inc)' : 'var(--exp)' }}>
+                {formatRupiah(s.laba_bersih_bulan_ini)}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  )
+}
