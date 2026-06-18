@@ -34,6 +34,7 @@ export default async function DashboardPage() {
 
   const proyekAktif = proyekList.filter(p => p.status === 'aktif').length
   const proyekSelesai = proyekList.filter(p => p.status === 'selesai').length
+  const txForAnomaly = (txResult.data ?? []).filter((t: any) => t.tipe === 'pengeluaran')
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -46,10 +47,11 @@ export default async function DashboardPage() {
             {new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </p>
         </div>
-      <AnomalyAlert transaksi={txForAnomaly} />
-
         <AddTxButton />
       </div>
+
+      {/* ── ANOMALY ALERT ───────────────────────────────────── */}
+      <AnomalyAlert transaksi={txForAnomaly} />
 
       {/* ── SECTION 1: HERO KPI (1 besar + 4 cards) ────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
