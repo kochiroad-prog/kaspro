@@ -1,11 +1,11 @@
-// VALTO Service Worker v1
-const CACHE = 'valto-v1'
+// VALTO Service Worker v2
+const CACHE = 'valto-v2'
 const STATIC = [
   '/',
   '/dashboard',
   '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png',
+  '/icon-192x192.png',
+  '/icon-512x512.png',
   '/apple-touch-icon.png',
 ]
 
