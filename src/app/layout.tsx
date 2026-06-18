@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import PwaRegister from '@/components/PwaRegister'
+import AiAssistant from '@/components/ai/AiAssistant'
 
 const font = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -45,6 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider>
           {children}
         </ThemeProvider>
+        <AiAssistant />
         <PwaRegister />
       </body>
     </html>

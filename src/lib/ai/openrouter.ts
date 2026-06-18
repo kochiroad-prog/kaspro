@@ -36,3 +36,41 @@ export async function callAI(
   const json = await res.json()
   return json.choices?.[0]?.message?.content?.trim() ?? ''
 }
+
+export type ChatMessage = { role: 'user' | 'assistant'; content: string }
+
+export async function callAIChat(
+  systemPrompt: string,
+  messages: ChatMessage[],
+  maxTokens = 512
+): Promise<string> {
+  const key = process.env.OPENROUTER_API_KEY
+  if (!key) throw new Error('OPENROUTER_API_KEY tidak diset')
+
+  const res = await fetch(OPENROUTER_API_URL, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${key}`,
+      'Content-Type': 'application/json',
+      'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL ?? 'https://valto.app',
+      'X-Title': 'VALTO',
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: maxTokens,
+      temperature: 0.7,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        ...messages,
+      ],
+    }),
+  })
+
+  if (!res.ok) {
+    const err = await res.text()
+    throw new Error(`OpenRouter error ${res.status}: ${err}`)
+  }
+
+  const json = await res.json()
+  return json.choices?.[0]?.message?.content?.trim() ?? ''
+}
