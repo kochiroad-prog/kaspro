@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
+import { logout } from '@/lib/actions/auth'
 
 const mainNav = [
   { href: '/dashboard',  icon: '🏠', label: 'Home' },
@@ -174,6 +175,21 @@ export default function MobileNav() {
               </div>
             </div>
           ))}
+        </div>
+
+          {/* Tombol Keluar */}
+          <div className="px-1 pt-2 pb-2">
+            <form action={logout}>
+              <button
+                type="submit"
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all active:scale-95"
+                style={{ background: 'rgba(220,38,38,0.08)', color: '#dc2626' }}
+              >
+                <span className="text-xl">🚪</span>
+                Keluar dari Akun
+              </button>
+            </form>
+          </div>
         </div>
       </div>
     </>
