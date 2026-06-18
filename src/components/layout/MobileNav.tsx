@@ -175,10 +175,9 @@ export default function MobileNav() {
               </div>
             </div>
           ))}
-        </div>
 
-          {/* Tombol Keluar */}
-          <div className="px-1 pt-2 pb-2">
+          {/* Tombol Keluar — di dalam scrollable agar selalu tampil */}
+          <div className="mt-2 mb-2">
             <form action={logout}>
               <button
                 type="submit"
