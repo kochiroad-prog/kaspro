@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { getUser } from '@/lib/actions/auth'
 import Sidebar from '@/components/layout/Sidebar'
 import Topbar from '@/components/layout/Topbar'
+import MobileNav from '@/components/layout/MobileNav'
 import AiChat from '@/components/ai/AiChat'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -13,11 +14,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <Sidebar user={user} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Topbar user={user} />
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6">
           {children}
         </main>
       </div>
-      {/* AI Floating Chat */}
+      <MobileNav />
       <AiChat />
     </div>
   )

@@ -20,7 +20,7 @@ export default function ProdukPage() {
     },
     {
       id: 3,
-      nama: 'PRAECOX',
+      nama: 'VALTO',
       deskripsi: 'Business automation ecosystem (aplikasi ini)',
       ikon: '⚡',
       url: '#',
@@ -33,7 +33,7 @@ export default function ProdukPage() {
     <div className="space-y-8 max-w-6xl mx-auto">
       {/* Header */}
       <div className="text-center">
-        <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text)' }}>Produk Unggulan Praecox</h1>
+        <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text)' }}>Produk Unggulan VALTO</h1>
         <p className="text-base" style={{ color: 'var(--text-muted)' }}>Ekosistem bisnis terintegrasi untuk kemudahan operasional Anda</p>
       </div>
 

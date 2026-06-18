@@ -13,7 +13,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>('light')
 
   useEffect(() => {
-    const stored = (localStorage.getItem('praecox-theme') as Theme) ?? 'light'
+    const stored = (localStorage.getItem('valto-theme') as Theme) ?? 'light'
     setTheme(stored)
     document.documentElement.setAttribute('data-theme', stored)
   }, [])
@@ -21,7 +21,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   function toggle() {
     const next: Theme = theme === 'light' ? 'dark' : 'light'
     setTheme(next)
-    localStorage.setItem('praecox-theme', next)
+    localStorage.setItem('valto-theme', next)
     document.documentElement.setAttribute('data-theme', next)
   }
 

@@ -1,0 +1,35 @@
+{
+  "name": "VALTO — Kas & Akuntansi Bisnis",
+  "short_name": "VALTO",
+  "description": "Aplikasi kas dan akuntansi bisnis yang mudah digunakan",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#f5f3ff",
+  "theme_color": "#6366f1",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Dashboard VALTO"
+    }
+  ],
+  "categories": ["finance", "business", "productivity"],
+  "lang": "id"
+}

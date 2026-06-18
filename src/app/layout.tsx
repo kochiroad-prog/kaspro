@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Plus_Jakarta_Sans } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/components/ThemeProvider'
@@ -10,14 +10,31 @@ const font = Plus_Jakarta_Sans({
 })
 
 export const metadata: Metadata = {
-  title: 'Praecox — Business Automation Ecosystem',
-  description: 'Praecox membangun sistem cerdas yang mengotomatiskan alur kerja, mengintegrasikan alat bisnis, dan meningkatkan efisiensi operasional.',
-  keywords: ['business automation', 'sistem bisnis', 'otomasi', 'praecox'],
-  openGraph: {
-    title: 'Praecox',
-    description: 'Business Automation Ecosystem',
-    siteName: 'Praecox',
+  title: 'VALTO — Aplikasi Kas & Akuntansi Bisnis',
+  description: 'VALTO adalah aplikasi kas dan akuntansi bisnis yang mudah digunakan.',
+  keywords: ['aplikasi kas', 'akuntansi bisnis', 'keuangan', 'valto'],
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'VALTO',
   },
+  icons: {
+    icon: '/icon.svg',
+    apple: '/apple-touch-icon.png',
+  },
+  openGraph: {
+    title: 'VALTO',
+    description: 'Aplikasi Kas & Akuntansi Bisnis',
+    siteName: 'VALTO',
+  },
+}
+
+export const viewport: Viewport = {
+  themeColor: '#6366f1',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

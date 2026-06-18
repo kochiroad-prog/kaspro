@@ -24,7 +24,7 @@ export default function AiChat() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: 'Halo! Saya asisten Praecox 👋\n\nSaya siap membantu Anda memahami cara penggunaan aplikasi ini — mulai dari mencatat transaksi, jurnal akuntansi, laporan keuangan, hingga pengaturan akun.\n\nAda yang bisa saya bantu?',
+      content: 'Halo! Saya asisten VALTO 👋\n\nSaya siap membantu Anda memahami cara penggunaan aplikasi ini — mulai dari mencatat transaksi, jurnal akuntansi, laporan keuangan, hingga pengaturan akun.\n\nAda yang bisa saya bantu?',
       timestamp: new Date(),
     }
   ])
@@ -71,7 +71,7 @@ export default function AiChat() {
         body: JSON.stringify({
           session_id: sessionId,
           message: msg,
-          context: 'Praecox - Aplikasi Manajemen Keuangan Bisnis',
+          context: 'VALTO - Aplikasi Manajemen Keuangan Bisnis',
         }),
       })
 
@@ -141,7 +141,7 @@ export default function AiChat() {
           style={{ background: 'linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%)' }}>
           <img src={BOT_AVATAR} alt="Bot" className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
           <div className="flex-1">
-            <p className="text-sm font-bold text-white">Asisten Praecox</p>
+            <p className="text-sm font-bold text-white">Asisten VALTO</p>
             <p className="text-xs text-white/70">Konsultan Aplikasi · LangGraph AI</p>
           </div>
           <div className="flex items-center gap-1.5">

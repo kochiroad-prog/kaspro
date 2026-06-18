@@ -8,19 +8,19 @@ const navItems = [
   {
     label: 'Utama',
     items: [
-      { href: '/dashboard',  icon: '▦',  label: 'Dashboard' },
-      { href: '/transaksi',  icon: '⟳',  label: 'Transaksi' },
-      { href: '/kas',        icon: '◈',  label: 'Kas & Rekening' },
-      { href: '/transfer',   icon: '⇄',  label: 'Transfer Kas' },
+      { href: '/dashboard',  icon: '🏠', label: 'Dashboard' },
+      { href: '/transaksi',  icon: '💸', label: 'Transaksi' },
+      { href: '/kas',        icon: '💰', label: 'Kas & Rekening' },
+      { href: '/transfer',   icon: '🔄', label: 'Transfer Kas' },
     ]
   },
   {
     label: 'Akuntansi',
     items: [
-      { href: '/akuntansi/coa',       icon: '⊞', label: 'Chart of Accounts' },
-      { href: '/akuntansi/jurnal',    icon: '☰', label: 'Jurnal Memorial' },
-      { href: '/akuntansi/neraca',    icon: '⊟', label: 'Neraca' },
-      { href: '/akuntansi/laba-rugi', icon: '◎', label: 'Laba Rugi' },
+      { href: '/akuntansi/coa',       icon: '📋', label: 'Chart of Accounts' },
+      { href: '/akuntansi/jurnal',    icon: '📓', label: 'Jurnal Memorial' },
+      { href: '/akuntansi/neraca',    icon: '⚖️', label: 'Neraca' },
+      { href: '/akuntansi/laba-rugi', icon: '📊', label: 'Laba Rugi' },
     ]
   },
   {
@@ -29,15 +29,15 @@ const navItems = [
       { href: '/laporan/harian',  icon: '📅', label: 'Harian' },
       { href: '/laporan/bulanan', icon: '📆', label: 'Bulanan' },
       { href: '/laporan/tahunan', icon: '🗓️', label: 'Tahunan' },
-      { href: '/laporan/custom',  icon: '⚙️', label: 'Custom' },
+      { href: '/laporan/custom',  icon: '🔍', label: 'Custom' },
     ]
   },
   {
     label: 'Bisnis',
     items: [
-      { href: '/unit-bisnis', icon: '⬡', label: 'Unit Bisnis' },
-      { href: '/proyek',      icon: '◫', label: 'Proyek' },
-      { href: '/kategori',    icon: '⊞', label: 'Kategori' },
+      { href: '/unit-bisnis', icon: '🏢', label: 'Unit Bisnis' },
+      { href: '/proyek',      icon: '📁', label: 'Proyek' },
+      { href: '/kategori',    icon: '🏷️', label: 'Kategori' },
     ]
   },
   {
@@ -56,16 +56,10 @@ const navItems = [
     ]
   },
   {
-    label: 'Produk',
-    items: [
-      { href: '/produk', icon: '🛍️', label: 'Produk Praecox' },
-    ]
-  },
-  {
     label: 'Pengaturan',
     items: [
-      { href: '/pengaturan/akun',              icon: '◉', label: 'Pengguna & Akun' },
-      { href: '/pengaturan/pengguna-tambahan', icon: '◎', label: 'Pengguna Tambahan' },
+      { href: '/pengaturan/akun',              icon: '👤', label: 'Pengguna & Akun' },
+      { href: '/pengaturan/pengguna-tambahan', icon: '👥', label: 'Pengguna Tambahan' },
     ]
   },
   {
@@ -83,14 +77,14 @@ export default function Sidebar({ user }: { user: any }) {
     .split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()
 
   return (
-    <aside className="sidebar w-56 flex-shrink-0 flex flex-col h-full">
+    <aside className="sidebar w-56 flex-shrink-0 flex-col h-full hidden md:flex">
 
       {/* Logo */}
       <div className="p-5" style={{ borderBottom: '1px solid var(--border)' }}>
         <div className="flex items-center gap-3">
-          <PraecoxLogo size={32} id="sidebar" />
-          <span className="font-bold text-base tracking-widest praecox-text">
-            PRAECOX
+          <ValtoLogo size={32} />
+          <span className="font-extrabold text-lg tracking-widest valto-text">
+            VALTO
           </span>
         </div>
       </div>
@@ -98,12 +92,8 @@ export default function Sidebar({ user }: { user: any }) {
       {/* User */}
       <div className="px-4 py-3 flex items-center gap-3" style={{ borderBottom: '1px solid var(--border)' }}>
         <div
-          className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-          style={{
-            background: 'var(--nav-active-bg)',
-            border: '1px solid var(--brand)',
-            color: 'var(--brand)',
-          }}
+          className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 text-white"
+          style={{ background: 'linear-gradient(135deg, var(--brand), #8b5cf6)' }}
         >
           {inisial}
         </div>
@@ -132,7 +122,7 @@ export default function Sidebar({ user }: { user: any }) {
                 const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
                 return (
                   <Link key={item.href} href={item.href} className={`nav-item ${isActive ? 'active' : ''}`}>
-                    <span className="text-sm leading-none font-mono w-4 text-center">{item.icon}</span>
+                    <span className="text-sm leading-none w-5 text-center">{item.icon}</span>
                     <span>{item.label}</span>
                   </Link>
                 )
@@ -146,10 +136,8 @@ export default function Sidebar({ user }: { user: any }) {
       <div className="p-3" style={{ borderTop: '1px solid var(--border)' }}>
         <Link
           href="/premium/pembayaran"
-          className="block px-3 py-2 mb-2 rounded-lg transition-opacity hover:opacity-80"
-          style={{
-            background: 'linear-gradient(135deg, var(--brand), var(--brand-2))',
-          }}
+          className="block px-3 py-2 mb-2 rounded-xl transition-opacity hover:opacity-80"
+          style={{ background: 'linear-gradient(135deg, var(--brand), #8b5cf6)' }}
         >
           <p className="text-xs font-bold text-white">✨ Plan Gratis</p>
           <p className="text-[10px] mt-0.5 text-white/70">Upgrade untuk fitur lengkap</p>
@@ -159,10 +147,8 @@ export default function Sidebar({ user }: { user: any }) {
             type="submit"
             className="nav-item w-full"
             style={{ color: 'var(--exp)' }}
-            onMouseEnter={e => (e.currentTarget.style.background = 'var(--exp-bg)')}
-            onMouseLeave={e => (e.currentTarget.style.background = '')}
           >
-            <span>⏻</span>
+            <span>🚪</span>
             <span>Keluar</span>
           </button>
         </form>
@@ -171,35 +157,27 @@ export default function Sidebar({ user }: { user: any }) {
   )
 }
 
-/* ── Logo SVG ───────────────────────────────────── */
-function PraecoxLogo({ size = 32, id }: { size?: number; id: string }) {
-  const gid = `pg-${id}`
+/* ── VALTO Logo SVG ─────────────────────────────── */
+export function ValtoLogo({ size = 32 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
+    <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
       <defs>
-        <linearGradient id={gid} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="var(--brand)" />
-          <stop offset="100%" stopColor="var(--brand-2)" />
+        <linearGradient id="vg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#6366f1" />
+          <stop offset="100%" stopColor="#f59e0b" />
         </linearGradient>
       </defs>
-      <circle cx="18" cy="18" r="15" stroke={`url(#${gid})`} strokeWidth="1.2" fill="none" />
-      <line x1="18" y1="3"  x2="6"  y2="12" stroke={`url(#${gid})`} strokeWidth="0.9" opacity="0.7"/>
-      <line x1="18" y1="3"  x2="30" y2="12" stroke={`url(#${gid})`} strokeWidth="0.9" opacity="0.7"/>
-      <line x1="6"  y1="12" x2="18" y2="18" stroke={`url(#${gid})`} strokeWidth="0.9" opacity="0.7"/>
-      <line x1="30" y1="12" x2="18" y2="18" stroke={`url(#${gid})`} strokeWidth="0.9" opacity="0.7"/>
-      <line x1="18" y1="18" x2="6"  y2="26" stroke={`url(#${gid})`} strokeWidth="0.9" opacity="0.7"/>
-      <line x1="18" y1="18" x2="30" y2="26" stroke={`url(#${gid})`} strokeWidth="0.9" opacity="0.7"/>
-      <line x1="6"  y1="26" x2="18" y2="33" stroke={`url(#${gid})`} strokeWidth="0.9" opacity="0.7"/>
-      <line x1="30" y1="26" x2="18" y2="33" stroke={`url(#${gid})`} strokeWidth="0.9" opacity="0.7"/>
-      <line x1="6"  y1="12" x2="6"  y2="26" stroke={`url(#${gid})`} strokeWidth="0.9" opacity="0.4"/>
-      <line x1="30" y1="12" x2="30" y2="26" stroke={`url(#${gid})`} strokeWidth="0.9" opacity="0.4"/>
-      <circle cx="18" cy="3"  r="1.8" fill="var(--brand)" />
-      <circle cx="6"  cy="12" r="1.5" fill="var(--brand)" opacity="0.8"/>
-      <circle cx="30" cy="12" r="1.5" fill="var(--brand-2)" />
-      <circle cx="18" cy="18" r="2.2" fill={`url(#${gid})`} />
-      <circle cx="6"  cy="26" r="1.5" fill="var(--brand-2)" opacity="0.8"/>
-      <circle cx="30" cy="26" r="1.5" fill="var(--brand)" opacity="0.8"/>
-      <circle cx="18" cy="33" r="1.8" fill="var(--brand-2)" />
+      <rect x="2" y="2" width="36" height="36" rx="10" fill="url(#vg)" opacity="0.12" />
+      <rect x="2" y="2" width="36" height="36" rx="10" stroke="url(#vg)" strokeWidth="1.5" fill="none" />
+      <path
+        d="M11 12 L20 28 L29 12"
+        stroke="url(#vg)"
+        strokeWidth="3.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+      <circle cx="20" cy="28" r="2.5" fill="url(#vg)" />
     </svg>
   )
 }

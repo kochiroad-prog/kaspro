@@ -32,7 +32,6 @@ export default async function TransaksiPage({
   const totalMasuk = txList.filter(t => t.tipe === 'pemasukan').reduce((s, t) => s + t.jumlah, 0)
   const totalKeluar = txList.filter(t => t.tipe === 'pengeluaran').reduce((s, t) => s + t.jumlah, 0)
 
-  // Siapkan data untuk export
   const exportData = txList.map(tx => ({
     tanggal: formatTanggal(tx.tanggal),
     kategori: tx.kategori?.nama ?? 'Lainnya',
@@ -45,10 +44,10 @@ export default async function TransaksiPage({
 
   return (
     <div className="space-y-5 max-w-6xl mx-auto">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Transaksi</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{txList.length} transaksi ditemukan</p>
+          <h1 className="text-xl font-bold" style={{ color: 'var(--text)' }}>Transaksi</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>{txList.length} transaksi ditemukan</p>
         </div>
         <div className="flex gap-2 flex-wrap">
           <ExportPanel
@@ -61,18 +60,18 @@ export default async function TransaksiPage({
       </div>
 
       {/* Summary */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="stat-card">
           <div className="stat-label">Total Uang Masuk</div>
-          <div className="stat-value text-green-600">{formatRupiah(totalMasuk)}</div>
+          <div className="stat-value" style={{ color: 'var(--inc)' }}>{formatRupiah(totalMasuk)}</div>
         </div>
         <div className="stat-card">
           <div className="stat-label">Total Uang Keluar</div>
-          <div className="stat-value text-red-600">{formatRupiah(totalKeluar)}</div>
+          <div className="stat-value" style={{ color: 'var(--exp)' }}>{formatRupiah(totalKeluar)}</div>
         </div>
         <div className="stat-card">
           <div className="stat-label">Selisih / Keuntungan</div>
-          <div className={`stat-value ${totalMasuk - totalKeluar >= 0 ? 'text-[var(--brand)]' : 'text-red-600'}`}>
+          <div className="stat-value" style={{ color: totalMasuk - totalKeluar >= 0 ? 'var(--inc)' : 'var(--exp)' }}>
             {formatRupiah(totalMasuk - totalKeluar)}
           </div>
         </div>
@@ -81,7 +80,7 @@ export default async function TransaksiPage({
       {/* Filter */}
       <form method="GET" className="card p-4 flex flex-wrap gap-3 items-end">
         <div>
-          <label className="block text-xs font-semibold text-gray-500 mb-1">Tipe</label>
+          <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Tipe</label>
           <select name="tipe" defaultValue={sp.tipe ?? ''} className="input w-36 py-2 text-sm">
             <option value="">Semua</option>
             <option value="pemasukan">Uang Masuk</option>
@@ -89,7 +88,7 @@ export default async function TransaksiPage({
           </select>
         </div>
         <div>
-          <label className="block text-xs font-semibold text-gray-500 mb-1">Kas</label>
+          <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Kas</label>
           <select name="kas_id" defaultValue={sp.kas_id ?? ''} className="input w-40 py-2 text-sm">
             <option value="">Semua Kas</option>
             {(kasResult.data ?? []).map(k => (
@@ -98,7 +97,7 @@ export default async function TransaksiPage({
           </select>
         </div>
         <div>
-          <label className="block text-xs font-semibold text-gray-500 mb-1">Kategori</label>
+          <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Kategori</label>
           <select name="kategori_id" defaultValue={sp.kategori_id ?? ''} className="input w-44 py-2 text-sm">
             <option value="">Semua Kategori</option>
             {(katResult.data ?? []).map(k => (
@@ -107,18 +106,18 @@ export default async function TransaksiPage({
           </select>
         </div>
         <div>
-          <label className="block text-xs font-semibold text-gray-500 mb-1">Dari</label>
+          <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Dari</label>
           <input type="date" name="dari" defaultValue={sp.dari ?? ''} className="input w-36 py-2 text-sm" />
         </div>
         <div>
-          <label className="block text-xs font-semibold text-gray-500 mb-1">Sampai</label>
+          <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Sampai</label>
           <input type="date" name="sampai" defaultValue={sp.sampai ?? ''} className="input w-36 py-2 text-sm" />
         </div>
         <button type="submit" className="btn-primary py-2 text-sm">Filter</button>
         <a href="/transaksi" className="btn-secondary py-2 text-sm">Reset</a>
       </form>
 
-      {/* Table */}
+      {/* Tabel Transaksi */}
       <TransaksiTable txList={txList} />
     </div>
   )

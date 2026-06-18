@@ -40,7 +40,7 @@ export default function PembayaranPage() {
       <div className="card p-6">
         <h2 className="text-base font-bold text-gray-800 mb-3">Upgrade Premium</h2>
         <p className="text-sm text-gray-600 mb-4">
-          Nikmati fitur lengkap Praecox dengan berlangganan paket premium.
+          Nikmati fitur lengkap VALTO dengan berlangganan paket premium.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="border border-[var(--brand)] rounded-lg p-4">

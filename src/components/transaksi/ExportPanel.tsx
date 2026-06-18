@@ -54,7 +54,7 @@ export default function ExportPanel({ data, userName, userEmail }: Props) {
 
     doc.setFontSize(14)
     doc.setTextColor(27, 127, 90)
-    doc.text('Praecox — Laporan Transaksi', 14, 14)
+    doc.text('VALTO — Laporan Transaksi', 14, 14)
     doc.setFontSize(9)
     doc.setTextColor(100)
     doc.text(`Dicetak: ${new Date().toLocaleDateString('id-ID', { dateStyle: 'long' })}`, 14, 20)
@@ -114,7 +114,7 @@ export default function ExportPanel({ data, userName, userEmail }: Props) {
       const doc = new jsPDF({ orientation: 'landscape' })
       doc.setFontSize(14)
       doc.setTextColor(27, 127, 90)
-      doc.text('Praecox — Laporan Transaksi', 14, 14)
+      doc.text('VALTO — Laporan Transaksi', 14, 14)
       doc.setFontSize(9)
       doc.setTextColor(100)
       doc.text(`Dicetak: ${new Date().toLocaleDateString('id-ID', { dateStyle: 'long' })}`, 14, 20)

@@ -14,8 +14,8 @@ const PAKET = [
 ]
 
 const BANK_INFO = [
-  { nama: 'Bank BCA', rek: '1234567890', atas_nama: 'PT Praecox' },
-  { nama: 'Bank Mandiri', rek: '0987654321', atas_nama: 'PT Praecox' },
+  { nama: 'Bank BCA', rek: '1234567890', atas_nama: 'VALTO' },
+  { nama: 'Bank Mandiri', rek: '0987654321', atas_nama: 'VALTO' },
 ]
 
 export default function PembayaranPage() {
@@ -160,7 +160,7 @@ export default function PembayaranPage() {
             ))}
           </div>
           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-            Kirim bukti transfer ke email support@praecox.id untuk verifikasi instan.
+            Kirim bukti transfer ke email support@valto.id untuk verifikasi instan.
           </p>
         </div>
       )}

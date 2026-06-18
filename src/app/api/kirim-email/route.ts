@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
       replyTo: fromEmail,
       subject: subjek,
       text: pesan,
-      html: `<p>${pesan.replace(/\n/g, '<br/>')}</p><br/><hr/><p style="color:#888;font-size:12px">Dikirim via Praecox</p>`,
+      html: `<p>${pesan.replace(/\n/g, '<br/>')}</p><br/><hr/><p style="color:#888;font-size:12px">Dikirim via VALTO</p>`,
       attachments,
     })
 
