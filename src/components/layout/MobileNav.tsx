@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { logout } from '@/lib/actions/auth'
+import PwaInstallGuide from '@/components/PwaInstallGuide'
 
 const mainNav = [
   { href: '/dashboard',  icon: '🏠', label: 'Home' },
@@ -64,14 +65,6 @@ const drawerGroups = [
 export default function MobileNav() {
   const pathname = usePathname()
   const [drawerOpen, setDrawerOpen] = useState(false)
-  const [canInstall, setCanInstall] = useState(false)
-
-  useEffect(() => {
-    const check = () => setCanInstall(!!(window as any).__pwaPrompt)
-    window.addEventListener('pwa-ready', check)
-    check()
-    return () => window.removeEventListener('pwa-ready', check)
-  }, [])
 
   // Close drawer on route change
   useEffect(() => { setDrawerOpen(false) }, [pathname])
@@ -185,25 +178,9 @@ export default function MobileNav() {
           ))}
 
           {/* Tombol Install App */}
-          {canInstall && (
-            <div className="mt-2 mb-2">
-              <button
-                onClick={async () => {
-                  const prompt = (window as any).__pwaPrompt
-                  if (!prompt) return
-                  prompt.prompt()
-                  await prompt.userChoice
-                  ;(window as any).__pwaPrompt = null
-                  setCanInstall(false)
-                }}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all active:scale-95"
-                style={{ background: 'rgba(99,102,241,0.08)', color: 'var(--brand)' }}
-              >
-                <span className="text-xl">📲</span>
-                Install Aplikasi VALTO
-              </button>
-            </div>
-          )}
+          <div className="mt-2">
+            <PwaInstallGuide />
+          </div>
 
           {/* Tombol Keluar — di dalam scrollable agar selalu tampil */}
           <div className="mt-2 mb-2">
