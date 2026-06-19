@@ -18,18 +18,25 @@ const navItems = [
     label: 'Akuntansi',
     items: [
       { href: '/akuntansi/coa',       icon: '📋', label: 'Chart of Accounts' },
-      { href: '/akuntansi/jurnal',    icon: '📓', label: 'Jurnal Memorial' },
-      { href: '/akuntansi/neraca',    icon: '⚖️', label: 'Neraca' },
-      { href: '/akuntansi/laba-rugi', icon: '📊', label: 'Laba Rugi' },
+      { href: '/akuntansi/jurnal',     icon: '📓', label: 'Jurnal Memorial' },
+      { href: '/akuntansi/neraca',     icon: '⚖️', label: 'Neraca' },
+      { href: '/akuntansi/laba-rugi',  icon: '📊', label: 'Laba Rugi' },
     ]
   },
   {
     label: 'Laporan',
     items: [
-      { href: '/laporan/harian',  icon: '📅', label: 'Harian' },
-      { href: '/laporan/bulanan', icon: '📆', label: 'Bulanan' },
-      { href: '/laporan/tahunan', icon: '🗓️', label: 'Tahunan' },
-      { href: '/laporan/custom',  icon: '🔍', label: 'Custom' },
+      { href: '/laporan/harian',   icon: '📅', label: 'Harian' },
+      { href: '/laporan/bulanan',  icon: '📆', label: 'Bulanan' },
+      { href: '/laporan/tahunan',  icon: '🗓️', label: 'Tahunan' },
+      { href: '/laporan/custom',   icon: '🔍', label: 'Custom' },
+      { href: '/laporan/proyeksi', icon: '🤖', label: 'AI Proyeksi' },
+    ]
+  },
+  {
+    label: 'Perencanaan',
+    items: [
+      { href: '/tagihan-rutin', icon: '📋', label: 'Tagihan Rutin' },
     ]
   },
   {
