@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { getRekapGaji, bayarGajiKaryawan, bayarSemuaGajiPerusahaan, RekapGajiKaryawan } from '@/lib/actions/gaji-absen'
-import { getKasList } from '@/lib/actions/kas'
-import { getKategori } from '@/lib/actions/kategori'
+import { getKas } from '@/lib/actions'
+import { getKategori } from '@/lib/actions'
 
 const MONTHS = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
 
@@ -49,7 +49,7 @@ export default function GajiPage() {
   useEffect(() => { load() }, [load])
 
   useEffect(() => {
-    getKasList().then(r => {
+    getKas().then(r => {
       const list = (r.data || []) as any[]
       setKasList(list)
       if (list.length > 0) setKasId(list[0].id)
