@@ -3,6 +3,21 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 
+async function checkOwnerAccess() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'Unauthorized' }
+  const allowedEmails = [
+    'kochiroad@gmail.com',
+    'nddsuksesgrup@gmail.com',
+    'aditiyaswahyu96@gmail.com',
+  ]
+  if (!allowedEmails.includes(user.email ?? '')) {
+    return { ok: false, error: 'Akses ditolak: fitur ini hanya untuk akun yang diizinkan.' }
+  }
+  return { ok: true, error: null }
+}
+
 function getAbsenClient() {
   const url = process.env.ABSEN_SUPABASE_URL
   const key = process.env.ABSEN_SUPABASE_SERVICE_KEY
@@ -26,6 +41,8 @@ export interface RekapGajiKaryawan {
 }
 
 export async function getRekapGaji(bulan: number, tahun: number): Promise<{ data: RekapGajiKaryawan[] | null; error: string | null }> {
+  const access = await checkOwnerAccess()
+  if (!access.ok) return { data: null, error: access.error }
   try {
     const absen = getAbsenClient()
 
@@ -79,6 +96,8 @@ export async function bayarGajiKaryawan(
   bulan: number,
   tahun: number
 ): Promise<{ error: string | null }> {
+  const access = await checkOwnerAccess()
+  if (!access.ok) return { error: access.error }
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Unauthorized' }
@@ -108,6 +127,8 @@ export async function bayarSemuaGajiPerusahaan(
   bulan: number,
   tahun: number
 ): Promise<{ berhasil: number; gagal: number; error: string | null }> {
+  const access = await checkOwnerAccess()
+  if (!access.ok) return { berhasil: 0, gagal: 0, error: access.error }
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { berhasil: 0, gagal: 0, error: 'Unauthorized' }
