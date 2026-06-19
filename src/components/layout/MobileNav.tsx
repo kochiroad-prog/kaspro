@@ -57,6 +57,7 @@ const drawerGroups = [
     items: [
       { href: '/laporan/proyeksi', icon: '🤖', label: 'AI Proyeksi' },
       { href: '/tagihan-rutin',    icon: '📋', label: 'Tagihan Rutin' },
+      { href: '/gaji',             icon: '👔', label: 'Rekap Gaji' },
     ]
   },
   {

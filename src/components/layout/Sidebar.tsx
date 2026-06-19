@@ -33,6 +33,7 @@ const navItems = [
     label: 'Perencanaan',
     items: [
       { href: '/tagihan-rutin', icon: '📋', label: 'Tagihan Rutin' },
+      { href: '/gaji',          icon: '👔', label: 'Rekap Gaji' },
     ]
   },
   {
