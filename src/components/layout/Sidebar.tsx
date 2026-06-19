@@ -26,11 +26,7 @@ const navItems = [
   {
     label: 'Laporan',
     items: [
-      { href: '/laporan/harian',   icon: '📅', label: 'Harian' },
-      { href: '/laporan/bulanan',  icon: '📆', label: 'Bulanan' },
-      { href: '/laporan/tahunan',  icon: '🗓️', label: 'Tahunan' },
-      { href: '/laporan/custom',   icon: '🔍', label: 'Custom' },
-      { href: '/laporan/proyeksi', icon: '🤖', label: 'AI Proyeksi' },
+      { href: '/laporan/harian', basePath: '/laporan', icon: '📊', label: 'Laporan' },
     ]
   },
   {
@@ -126,7 +122,8 @@ export default function Sidebar({ user }: { user: any }) {
             </p>
             <div className="space-y-0.5">
               {section.items.map(item => {
-                const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+                const base = (item as any).basePath ?? item.href
+                const isActive = pathname === item.href || pathname.startsWith(base + '/')
                 return (
                   <Link key={item.href} href={item.href} className={`nav-item ${isActive ? 'active' : ''}`}>
                     <span className="text-sm leading-none w-5 text-center">{item.icon}</span>
