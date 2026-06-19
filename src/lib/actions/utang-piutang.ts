@@ -3,6 +3,9 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 
+export type TipeUtang = 'tagihan_berulang' | 'kasbon' | 'cicilan' | 'hutang_usaha'
+export type TipePiutang = 'tagihan_berulang' | 'kasbon' | 'cicilan' | 'piutang_usaha'
+
 export interface Utang {
   id: string
   user_id: string
@@ -12,6 +15,8 @@ export interface Utang {
   klien: string
   deskripsi: string
   kas_id: string | null
+  tipe: TipeUtang
+  catatan_ai: string | null
   status: 'belum_lunas' | 'lunas'
   created_at: string
 }
@@ -23,6 +28,7 @@ export interface UtangInput {
   klien: string
   deskripsi: string
   kas_id?: string | null
+  tipe?: TipeUtang
 }
 
 export interface Piutang {
@@ -34,6 +40,8 @@ export interface Piutang {
   klien: string
   deskripsi: string
   kas_id: string | null
+  tipe: TipePiutang
+  catatan_ai: string | null
   status: 'belum_lunas' | 'lunas'
   created_at: string
 }
@@ -45,6 +53,7 @@ export interface PiutangInput {
   klien: string
   deskripsi: string
   kas_id?: string | null
+  tipe?: TipePiutang
 }
 
 /* ── UTANG ──────────────────────────────────────── */
@@ -81,6 +90,7 @@ export async function tambahUtang(input: UtangInput) {
       klien: input.klien,
       deskripsi: input.deskripsi ?? '',
       kas_id: input.kas_id ?? null,
+      tipe: input.tipe ?? 'hutang_usaha',
       status: 'belum_lunas',
     })
     .select()
@@ -157,6 +167,7 @@ export async function tambahPiutang(input: PiutangInput) {
       klien: input.klien,
       deskripsi: input.deskripsi ?? '',
       kas_id: input.kas_id ?? null,
+      tipe: input.tipe ?? 'piutang_usaha',
       status: 'belum_lunas',
     })
     .select()

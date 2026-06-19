@@ -53,6 +53,12 @@ const drawerGroups = [
     ]
   },
   {
+    label: 'AI & Proyeksi',
+    items: [
+      { href: '/laporan/proyeksi', icon: '🤖', label: 'AI Proyeksi' },
+    ]
+  },
+  {
     label: 'Akun & Premium',
     items: [
       { href: '/pengaturan/akun',              icon: '👤', label: 'Pengaturan Akun' },

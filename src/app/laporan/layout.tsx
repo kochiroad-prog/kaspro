@@ -6,10 +6,11 @@ import Topbar from '@/components/layout/Topbar'
 import MobileNav from '@/components/layout/MobileNav'
 
 const subMenu = [
-  { href: '/laporan/harian',  icon: '1', label: 'Harian' },
-  { href: '/laporan/bulanan', icon: '2', label: 'Bulanan' },
-  { href: '/laporan/tahunan', icon: '3', label: 'Tahunan' },
-  { href: '/laporan/custom',  icon: '4', label: 'Custom' },
+  { href: '/laporan/harian',   icon: '1', label: 'Harian' },
+  { href: '/laporan/bulanan',  icon: '2', label: 'Bulanan' },
+  { href: '/laporan/tahunan',  icon: '3', label: 'Tahunan' },
+  { href: '/laporan/custom',   icon: '4', label: 'Custom' },
+  { href: '/laporan/proyeksi', icon: '🤖', label: 'AI Proyeksi' },
 ]
 
 export default async function LaporanLayout({ children }: { children: React.ReactNode }) {
