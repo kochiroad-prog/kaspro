@@ -6,6 +6,7 @@ import { getKas, getKategori, getUnitBisnis, getProyek } from '@/lib/actions/ind
 import { getCoaDetail } from '@/lib/actions/akuntansi'
 import { rekomendasiAkun } from '@/lib/actions/rag'
 import { hariIni, jamSekarang } from '@/lib/utils'
+import WaktuPicker from '@/components/ui/WaktuPicker'
 import type { Kas, Kategori, UnitBisnis, Proyek, TipeTransaksi, ChartOfAccounts, CoaSearchResult } from '@/types'
 
 export default function AddTxButton() {
@@ -316,7 +317,7 @@ export default function AddTxButton() {
                       <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--text)' }}>
                         Jam
                       </label>
-                      <input name="waktu" type="time" defaultValue={jamSekarang()} className="input" />
+                      <WaktuPicker name="waktu" defaultValue={jamSekarang()} />
                     </div>
                   </div>
 

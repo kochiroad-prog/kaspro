@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { updateTransaksi, hapusTransaksi } from '@/lib/actions/transaksi'
 import { getKas, getKategori, getUnitBisnis, getProyek } from '@/lib/actions/index'
 import type { Transaksi, Kas, Kategori, UnitBisnis, Proyek } from '@/types'
+import WaktuPicker from '@/components/ui/WaktuPicker'
 
 interface Props {
   tx: Transaksi
@@ -138,11 +139,9 @@ export default function EditTxModal({ tx, onClose }: Props) {
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Jam</label>
-                <input
+                <WaktuPicker
                   name="waktu"
-                  type="time"
                   defaultValue={tx.waktu?.slice(0, 5) ?? new Date(tx.created_at).toTimeString().slice(0, 5)}
-                  className="input bg-white"
                 />
               </div>
             </div>
