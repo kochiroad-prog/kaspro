@@ -76,6 +76,7 @@ export interface Transaksi {
   jumlah: number
   catatan: string
   tanggal: string
+  waktu: string | null
   created_at: string
   updated_at: string
   // Joined fields
@@ -110,6 +111,7 @@ export interface TransaksiInput {
   jumlah: number
   catatan: string
   tanggal: string
+  waktu?: string | null
 }
 
 export interface KasInput {

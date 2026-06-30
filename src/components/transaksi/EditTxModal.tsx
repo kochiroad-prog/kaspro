@@ -75,6 +75,7 @@ export default function EditTxModal({ tx, onClose }: Props) {
       jumlah: parseInt((fd.get('jumlah') as string).replace(/\D/g, '')) || 0,
       catatan: fd.get('catatan') as string,
       tanggal: fd.get('tanggal') as string,
+      waktu: (fd.get('waktu') as string) || null,
     })
     setLoading(false)
     if (result.error) {
@@ -129,16 +130,21 @@ export default function EditTxModal({ tx, onClose }: Props) {
               </div>
             </div>
 
-            {/* Tanggal */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Tanggal</label>
-              <input
-                name="tanggal"
-                type="date"
-                defaultValue={tx.tanggal}
-                required
-                className="input bg-white"
-              />
+            {/* Tanggal + Jam */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Tanggal</label>
+                <input name="tanggal" type="date" defaultValue={tx.tanggal} required className="input bg-white" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Jam</label>
+                <input
+                  name="waktu"
+                  type="time"
+                  defaultValue={tx.waktu?.slice(0, 5) ?? new Date(tx.created_at).toTimeString().slice(0, 5)}
+                  className="input bg-white"
+                />
+              </div>
             </div>
 
             {/* Nominal */}

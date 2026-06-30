@@ -1,4 +1,4 @@
-import { formatRupiah, formatRelative } from '@/lib/utils'
+import { formatRupiah, formatRelative, formatJam } from '@/lib/utils'
 import type { Transaksi } from '@/types'
 
 export default function TxItem({ tx }: { tx: Transaksi }) {
@@ -35,7 +35,12 @@ export default function TxItem({ tx }: { tx: Transaksi }) {
         <p className={`text-sm font-bold ${isInc ? 'text-green-600' : 'text-red-600'}`}>
           {isInc ? '+' : '-'} {formatRupiah(tx.jumlah)}
         </p>
-        <p className="text-xs text-gray-400 mt-0.5">{formatRelative(tx.tanggal)}</p>
+        <p className="text-xs text-gray-400 mt-0.5">
+          {formatRelative(tx.tanggal)}
+          {formatJam(tx.waktu, tx.created_at) && (
+            <span className="ml-1">· {formatJam(tx.waktu, tx.created_at)}</span>
+          )}
+        </p>
       </div>
     </div>
   )

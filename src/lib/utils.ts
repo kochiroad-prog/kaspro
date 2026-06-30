@@ -124,3 +124,25 @@ export function hitungPerubahan(sekarang: number, sebelum: number): number {
 export function cn(...classes: (string | boolean | undefined | null)[]): string {
   return classes.filter(Boolean).join(' ')
 }
+
+/**
+ * Format waktu "HH:MM:SS" → "HH:MM"
+ * Jika waktu null, fallback ke created_at (browser timezone)
+ * @example formatJam("14:30:00") → "14:30"
+ */
+export function formatJam(waktu: string | null | undefined, createdAt?: string): string {
+  if (waktu) return waktu.slice(0, 5)
+  if (createdAt) {
+    const d = new Date(createdAt)
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+  }
+  return ''
+}
+
+/**
+ * Jam dan menit sekarang dalam format HH:MM
+ */
+export function jamSekarang(): string {
+  const d = new Date()
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}

@@ -85,6 +85,7 @@ export async function tambahTransaksi(input: TransaksiInput) {
       jumlah: input.jumlah,
       catatan: input.catatan,
       tanggal: input.tanggal,
+      waktu: input.waktu ?? null,
     })
     .select()
     .single()

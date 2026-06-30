@@ -5,7 +5,7 @@ import { tambahTransaksi } from '@/lib/actions/transaksi'
 import { getKas, getKategori, getUnitBisnis, getProyek } from '@/lib/actions/index'
 import { getCoaDetail } from '@/lib/actions/akuntansi'
 import { rekomendasiAkun } from '@/lib/actions/rag'
-import { hariIni } from '@/lib/utils'
+import { hariIni, jamSekarang } from '@/lib/utils'
 import type { Kas, Kategori, UnitBisnis, Proyek, TipeTransaksi, ChartOfAccounts, CoaSearchResult } from '@/types'
 
 export default function AddTxButton() {
@@ -95,6 +95,7 @@ export default function AddTxButton() {
       jumlah: parseInt((fd.get('jumlah') as string).replace(/\D/g, '')) || 0,
       catatan: fd.get('catatan') as string,
       tanggal: fd.get('tanggal') as string,
+      waktu: (fd.get('waktu') as string) || null,
     })
     if (result.error) {
       setError(result.error)
@@ -303,57 +304,46 @@ export default function AddTxButton() {
                     </div>
                   </div>
 
-                  {/* Tanggal + Unit Bisnis */}
+                  {/* Tanggal + Jam */}
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label
-                        className="block text-sm font-semibold mb-1.5"
-                        style={{ color: 'var(--text)' }}
-                      >
+                      <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--text)' }}>
                         Tanggal
                       </label>
-                      <input
-                        name="tanggal"
-                        type="date"
-                        defaultValue={hariIni()}
-                        required
-                        className="input"
-                      />
+                      <input name="tanggal" type="date" defaultValue={hariIni()} required className="input" />
                     </div>
                     <div>
-                      <label
-                        className="block text-sm font-semibold mb-1.5"
-                        style={{ color: 'var(--text)' }}
-                      >
+                      <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--text)' }}>
+                        Jam
+                      </label>
+                      <input name="waktu" type="time" defaultValue={jamSekarang()} className="input" />
+                    </div>
+                  </div>
+
+                  {/* Unit Bisnis + Proyek */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--text)' }}>
                         Unit Bisnis
                       </label>
                       <select name="unit_bisnis_id" className="input">
                         <option value="">— Pilih unit —</option>
                         {unitList.map(u => (
-                          <option key={u.id} value={u.id}>
-                            {u.nama}
-                          </option>
+                          <option key={u.id} value={u.id}>{u.nama}</option>
                         ))}
                       </select>
                     </div>
-                  </div>
-
-                  {/* Proyek */}
-                  <div>
-                    <label
-                      className="block text-sm font-semibold mb-1.5"
-                      style={{ color: 'var(--text)' }}
-                    >
-                      Proyek (opsional)
-                    </label>
-                    <select name="proyek_id" className="input">
-                      <option value="">— Tidak ada proyek —</option>
-                      {proyekList.map(p => (
-                        <option key={p.id} value={p.id}>
-                          {p.nama}
-                        </option>
-                      ))}
-                    </select>
+                    <div>
+                      <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--text)' }}>
+                        Proyek
+                      </label>
+                      <select name="proyek_id" className="input">
+                        <option value="">— Pilih proyek —</option>
+                        {proyekList.map(p => (
+                          <option key={p.id} value={p.id}>{p.nama}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
 
                   {/* Akun CoA — AI auto-select + manual search */}

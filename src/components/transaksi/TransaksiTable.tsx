@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { formatRupiah, formatTanggal } from '@/lib/utils'
+import { formatRupiah, formatTanggal, formatJam } from '@/lib/utils'
 import type { Transaksi } from '@/types'
 import EditTxModal from './EditTxModal'
 
@@ -43,8 +43,11 @@ export default function TransaksiTable({ txList }: Props) {
                     className="hover:bg-gray-50 transition-colors cursor-pointer group"
                     onClick={() => setEditTx(tx)}
                   >
-                    <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">
-                      {formatTanggal(tx.tanggal)}
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <p className="text-sm text-gray-500">{formatTanggal(tx.tanggal)}</p>
+                      {formatJam(tx.waktu, tx.created_at) && (
+                        <p className="text-xs text-gray-400 mt-0.5">🕐 {formatJam(tx.waktu, tx.created_at)}</p>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
