@@ -223,7 +223,7 @@ export async function updateUnitBisnis(id: string, input: UnitBisnisInput) {
 
   const { data, error } = await supabase
     .from('unit_bisnis')
-    .update({ ...input, updated_at: new Date().toISOString() })
+    .update({ ...input })
     .eq('id', id)
     .eq('user_id', userId)
     .select()
@@ -240,7 +240,7 @@ export async function hapusUnitBisnis(id: string) {
 
   const { error } = await supabase
     .from('unit_bisnis')
-    .update({ aktif: false, updated_at: new Date().toISOString() })
+    .update({ aktif: false })
     .eq('id', id)
     .eq('user_id', userId)
 
@@ -287,7 +287,7 @@ export async function updateProyek(id: string, input: ProyekInput & { status?: s
 
   const { data, error } = await supabase
     .from('proyek')
-    .update({ ...input, updated_at: new Date().toISOString() })
+    .update({ ...input })
     .eq('id', id)
     .eq('user_id', userId)
     .select()
