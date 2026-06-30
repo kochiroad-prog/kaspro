@@ -1,7 +1,7 @@
 'use server'
 
+import { getEffectiveUserId } from '@/lib/supabase/get-effective-user'
 import { revalidatePath } from 'next/cache'
-import { createClient } from '@/lib/supabase/server'
 
 export type TipeUtang = 'tagihan_berulang' | 'kasbon' | 'cicilan' | 'hutang_usaha'
 export type TipePiutang = 'tagihan_berulang' | 'kasbon' | 'cicilan' | 'piutang_usaha'
@@ -59,22 +59,20 @@ export interface PiutangInput {
 /* ── UTANG ──────────────────────────────────────── */
 
 export async function getUtang() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   const { data, error } = await supabase
     .from('utang')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .order('created_at', { ascending: false })
 
   return { data, error: error?.message ?? null }
 }
 
 export async function tambahUtang(input: UtangInput) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   if (!input.klien) return { data: null, error: 'Nama klien wajib diisi' }
@@ -83,7 +81,7 @@ export async function tambahUtang(input: UtangInput) {
   const { data, error } = await supabase
     .from('utang')
     .insert({
-      user_id: user.id,
+      user_id: userId,
       tanggal_awal: input.tanggal_awal,
       jatuh_tempo: input.jatuh_tempo ?? null,
       nominal: input.nominal,
@@ -102,15 +100,14 @@ export async function tambahUtang(input: UtangInput) {
 }
 
 export async function updateStatusUtang(id: string, status: 'belum_lunas' | 'lunas') {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { error: 'Tidak terautentikasi' }
 
   const { error } = await supabase
     .from('utang')
     .update({ status })
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
 
   if (error) return { error: error.message }
   revalidatePath('/utang-piutang/utang')
@@ -118,15 +115,14 @@ export async function updateStatusUtang(id: string, status: 'belum_lunas' | 'lun
 }
 
 export async function hapusUtang(id: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { error: 'Tidak terautentikasi' }
 
   const { error } = await supabase
     .from('utang')
     .delete()
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
 
   if (error) return { error: error.message }
   revalidatePath('/utang-piutang/utang')
@@ -136,22 +132,20 @@ export async function hapusUtang(id: string) {
 /* ── PIUTANG ────────────────────────────────────── */
 
 export async function getPiutang() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   const { data, error } = await supabase
     .from('piutang')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .order('created_at', { ascending: false })
 
   return { data, error: error?.message ?? null }
 }
 
 export async function tambahPiutang(input: PiutangInput) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   if (!input.klien) return { data: null, error: 'Nama klien wajib diisi' }
@@ -160,7 +154,7 @@ export async function tambahPiutang(input: PiutangInput) {
   const { data, error } = await supabase
     .from('piutang')
     .insert({
-      user_id: user.id,
+      user_id: userId,
       tanggal_awal: input.tanggal_awal,
       jatuh_tempo: input.jatuh_tempo ?? null,
       nominal: input.nominal,
@@ -179,15 +173,14 @@ export async function tambahPiutang(input: PiutangInput) {
 }
 
 export async function updateStatusPiutang(id: string, status: 'belum_lunas' | 'lunas') {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { error: 'Tidak terautentikasi' }
 
   const { error } = await supabase
     .from('piutang')
     .update({ status })
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
 
   if (error) return { error: error.message }
   revalidatePath('/utang-piutang/piutang')
@@ -195,15 +188,14 @@ export async function updateStatusPiutang(id: string, status: 'belum_lunas' | 'l
 }
 
 export async function hapusPiutang(id: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { error: 'Tidak terautentikasi' }
 
   const { error } = await supabase
     .from('piutang')
     .delete()
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
 
   if (error) return { error: error.message }
   revalidatePath('/utang-piutang/piutang')

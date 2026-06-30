@@ -1,11 +1,10 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { getEffectiveUserId } from '@/lib/supabase/get-effective-user'
 
 // ─── Get transaksi untuk periode laporan ─────────────────────
 export async function getTransaksiPeriode(dari: string, sampai: string, kas_id?: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   let query = supabase
@@ -15,7 +14,7 @@ export async function getTransaksiPeriode(dari: string, sampai: string, kas_id?:
       kas:kas_id (id, nama, tipe),
       kategori:kategori_id (id, nama, ikon)
     `)
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .gte('tanggal', dari)
     .lte('tanggal', sampai)
     .order('tanggal', { ascending: false })
@@ -29,8 +28,7 @@ export async function getTransaksiPeriode(dari: string, sampai: string, kas_id?:
 
 // ─── Get transfer untuk periode laporan ──────────────────────
 export async function getTransferPeriode(dari: string, sampai: string, kas_id?: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   let query = supabase
@@ -40,7 +38,7 @@ export async function getTransferPeriode(dari: string, sampai: string, kas_id?: 
       dari_kas:dari_kas_id (id, nama),
       ke_kas:ke_kas_id (id, nama)
     `)
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .gte('tanggal', dari)
     .lte('tanggal', sampai)
     .order('tanggal', { ascending: false })
@@ -56,19 +54,18 @@ export async function getTransferPeriode(dari: string, sampai: string, kas_id?: 
 
 // ─── Get saldo awal sebelum periode ──────────────────────────
 export async function getSaldoAwalPeriode(dari: string, kas_id?: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { saldo: 0 }
 
   // Hitung dari saldo current kas dikurangi selisih transaksi setelah tanggal dari
-  let kasQuery = supabase.from('kas').select('id, saldo').eq('user_id', user.id).eq('aktif', true)
+  let kasQuery = supabase.from('kas').select('id, saldo').eq('user_id', userId).eq('aktif', true)
   if (kas_id && kas_id !== 'semua') kasQuery = kasQuery.eq('id', kas_id)
   const { data: kasData } = await kasQuery
 
   const totalSaldoNow = (kasData ?? []).reduce((s, k) => s + k.saldo, 0)
 
   // Transaksi setelah periode
-  let txAfter = supabase.from('transaksi').select('tipe, jumlah').eq('user_id', user.id).gte('tanggal', dari)
+  let txAfter = supabase.from('transaksi').select('tipe, jumlah').eq('user_id', userId).gte('tanggal', dari)
   if (kas_id && kas_id !== 'semua') txAfter = txAfter.eq('kas_id', kas_id)
   const { data: txAfterData } = await txAfter
 

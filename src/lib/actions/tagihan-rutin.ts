@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { getEffectiveUserId } from '@/lib/supabase/get-effective-user'
 
 export interface TagihanRutin {
   id: string
@@ -29,28 +29,26 @@ export interface TambahTagihanRutinInput {
 }
 
 export async function getTagihanRutin() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Unauthorized' }
 
   const { data, error } = await supabase
     .from('tagihan_rutin')
     .select('*, kategori(nama), kas(nama)')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .order('tanggal_tiap_bulan', { ascending: true })
 
   return { data, error: error?.message ?? null }
 }
 
 export async function tambahTagihanRutin(input: TambahTagihanRutinInput) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Unauthorized' }
 
   const { data, error } = await supabase
     .from('tagihan_rutin')
     .insert({
-      user_id: user.id,
+      user_id: userId,
       nama: input.nama.trim(),
       nominal: input.nominal,
       tanggal_tiap_bulan: input.tanggal_tiap_bulan,
@@ -67,43 +65,40 @@ export async function tambahTagihanRutin(input: TambahTagihanRutinInput) {
 }
 
 export async function hapusTagihanRutin(id: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { error: 'Unauthorized' }
 
   const { error } = await supabase
     .from('tagihan_rutin')
     .delete()
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
 
   return { error: error?.message ?? null }
 }
 
 export async function toggleAktifTagihanRutin(id: string, aktif: boolean) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { error: 'Unauthorized' }
 
   const { error } = await supabase
     .from('tagihan_rutin')
     .update({ aktif })
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
 
   return { error: error?.message ?? null }
 }
 
 export async function catatPembayaranTagihan(tagihanId: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { error: 'Unauthorized' }
 
   const { data: tagihan, error: fetchErr } = await supabase
     .from('tagihan_rutin')
     .select('*')
     .eq('id', tagihanId)
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .single()
 
   if (fetchErr || !tagihan) return { error: 'Tagihan tidak ditemukan' }
@@ -115,7 +110,7 @@ export async function catatPembayaranTagihan(tagihanId: string) {
   const { error: trxErr } = await supabase
     .from('transaksi')
     .insert({
-      user_id: user.id,
+      user_id: userId,
       kas_id: tagihan.kas_id,
       kategori_id: tagihan.kategori_id,
       tipe: 'pengeluaran',
@@ -129,15 +124,14 @@ export async function catatPembayaranTagihan(tagihanId: string) {
 }
 
 export async function updateTagihanRutin(id: string, input: Partial<TambahTagihanRutinInput>) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { error: 'Unauthorized' }
 
   const { error } = await supabase
     .from('tagihan_rutin')
     .update(input)
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
 
   return { error: error?.message ?? null }
 }

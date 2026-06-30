@@ -1,7 +1,7 @@
 'use server'
 
+import { getEffectiveUserId } from '@/lib/supabase/get-effective-user'
 import { revalidatePath } from 'next/cache'
-import { createClient } from '@/lib/supabase/server'
 import type { TransaksiInput } from '@/types'
 
 // ============================================================
@@ -18,8 +18,7 @@ export async function getTransaksi(params?: {
   limit?: number
   offset?: number
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   let query = supabase
@@ -31,7 +30,7 @@ export async function getTransaksi(params?: {
       unit_bisnis:unit_bisnis_id (id, nama),
       proyek:proyek_id (id, nama)
     `)
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .order('tanggal', { ascending: false })
     .order('created_at', { ascending: false })
 
@@ -53,8 +52,7 @@ export async function getTransaksi(params?: {
 // TAMBAH TRANSAKSI
 // ============================================================
 export async function tambahTransaksi(input: TransaksiInput) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   // Validasi
@@ -78,7 +76,7 @@ export async function tambahTransaksi(input: TransaksiInput) {
   const { data, error } = await supabase
     .from('transaksi')
     .insert({
-      user_id: user.id,
+      user_id: userId,
       kas_id: input.kas_id,
       kategori_id: input.kategori_id || null,
       unit_bisnis_id: input.unit_bisnis_id || null,
@@ -105,15 +103,14 @@ export async function tambahTransaksi(input: TransaksiInput) {
 // UPDATE TRANSAKSI
 // ============================================================
 export async function updateTransaksi(id: string, input: Partial<TransaksiInput>) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   const { data, error } = await supabase
     .from('transaksi')
     .update({ ...input, updated_at: new Date().toISOString() })
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .select()
     .single()
 
@@ -130,15 +127,14 @@ export async function updateTransaksi(id: string, input: Partial<TransaksiInput>
 // HAPUS TRANSAKSI
 // ============================================================
 export async function hapusTransaksi(id: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { error: 'Tidak terautentikasi' }
 
   const { error } = await supabase
     .from('transaksi')
     .delete()
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
 
   if (error) return { error: error.message }
 
@@ -153,8 +149,7 @@ export async function hapusTransaksi(id: string) {
 // DASHBOARD STATS
 // ============================================================
 export async function getDashboardStats() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return null
 
   const hari_ini = new Date().toISOString().split('T')[0]
@@ -163,18 +158,18 @@ export async function getDashboardStats() {
 
   const [kasResult, hariIniResult, bulanIniResult] = await Promise.all([
     // Total semua kas
-    supabase.from('kas').select('saldo').eq('user_id', user.id).eq('aktif', true),
+    supabase.from('kas').select('saldo').eq('user_id', userId).eq('aktif', true),
 
     // Transaksi hari ini
     supabase.from('transaksi')
       .select('tipe, jumlah')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .eq('tanggal', hari_ini),
 
     // Transaksi bulan ini
     supabase.from('transaksi')
       .select('tipe, jumlah')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .gte('tanggal', awal_bulan),
   ])
 

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import type { PeranPengguna, PermisiKas, PermisiMenu } from '@/lib/pengguna-tambahan-types'
 
 export type { PeranPengguna, PermisiKas, PermisiMenu, PermisiMenuLaporan } from '@/lib/pengguna-tambahan-types'
@@ -9,6 +10,7 @@ export type { PeranPengguna, PermisiKas, PermisiMenu, PermisiMenuLaporan } from 
 export interface PenggunaTambahan {
   id: string
   user_id: string       // owner
+  auth_user_id: string | null
   nama: string
   email: string
   peran: PeranPengguna
@@ -16,6 +18,22 @@ export interface PenggunaTambahan {
   permisi_menu: PermisiMenu | null
   aktif: boolean
   created_at: string
+}
+
+// ─── Helper: pastikan yang memanggil adalah owner ────────────────────────────
+async function requireOwner() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { user: null, supabase, error: 'Tidak terautentikasi' }
+
+  const { data: profile } = await supabase
+    .from('profiles').select('role').eq('id', user.id).single()
+
+  if (profile?.role !== 'owner') {
+    return { user: null, supabase, error: 'Hanya SuperAdmin (owner) yang bisa mengelola pengguna tambahan' }
+  }
+
+  return { user, supabase, error: null }
 }
 
 // ─── GET ────────────────────────────────────────────────────────────────────
@@ -42,22 +60,49 @@ export async function tambahPenggunaTambahan(input: {
   permisi_custom?: PermisiKas[]
   permisi_menu?: PermisiMenu
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { data: null, error: 'Tidak terautentikasi' }
+  const { user, supabase, error: authError } = await requireOwner()
+  if (authError || !user) return { data: null, error: authError }
 
-  // Cek apakah user adalah owner
-  const { data: profile } = await supabase
-    .from('profiles').select('role').eq('id', user.id).single()
-
-  if (profile?.role !== 'owner') {
-    return { data: null, error: 'Hanya SuperAdmin (owner) yang bisa membuat pengguna tambahan' }
+  if (!input.password || input.password.length < 6) {
+    return { data: null, error: 'Password minimal 6 karakter' }
   }
 
+  // 1. Cek apakah email sudah digunakan
+  const { data: existing } = await supabase
+    .from('pengguna_tambahan')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('email', input.email)
+    .single()
+
+  if (existing) return { data: null, error: 'Email sudah digunakan sebagai pengguna tambahan' }
+
+  // 2. Daftarkan ke Supabase Auth menggunakan admin API
+  const admin = createAdminClient()
+  const { data: authData, error: createError } = await admin.auth.admin.createUser({
+    email: input.email,
+    password: input.password,
+    email_confirm: true,  // langsung aktif, tidak perlu konfirmasi email
+    user_metadata: {
+      nama: input.nama,
+      is_sub_user: true,
+      owner_id: user.id,
+    },
+  })
+
+  if (createError) {
+    if (createError.message.includes('already been registered') || createError.message.includes('already exists')) {
+      return { data: null, error: 'Email sudah terdaftar di sistem. Gunakan email lain.' }
+    }
+    return { data: null, error: createError.message }
+  }
+
+  // 3. Simpan ke tabel pengguna_tambahan dengan auth_user_id
   const { data, error } = await supabase
     .from('pengguna_tambahan')
     .insert({
       user_id: user.id,
+      auth_user_id: authData.user.id,
       nama: input.nama,
       email: input.email,
       password_hash: input.password,
@@ -69,7 +114,12 @@ export async function tambahPenggunaTambahan(input: {
     .select()
     .single()
 
-  if (error) return { data: null, error: error.message }
+  if (error) {
+    // Rollback: hapus user yang baru dibuat di Auth
+    await admin.auth.admin.deleteUser(authData.user.id)
+    return { data: null, error: error.message }
+  }
+
   revalidatePath('/pengaturan/pengguna-tambahan')
   return { data, error: null }
 }
@@ -83,24 +133,43 @@ export async function updatePenggunaTambahan(id: string, input: {
   permisi_custom?: PermisiKas[]
   permisi_menu?: PermisiMenu
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { data: null, error: 'Tidak terautentikasi' }
+  const { user, supabase, error: authError } = await requireOwner()
+  if (authError || !user) return { data: null, error: authError }
 
-  const { data: profile } = await supabase
-    .from('profiles').select('role').eq('id', user.id).single()
+  // Ambil record lama untuk mendapatkan auth_user_id
+  const { data: existing } = await supabase
+    .from('pengguna_tambahan')
+    .select('auth_user_id, email')
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .single()
 
-  if (profile?.role !== 'owner') {
-    return { data: null, error: 'Hanya SuperAdmin (owner) yang bisa mengedit pengguna tambahan' }
+  if (!existing) return { data: null, error: 'Pengguna tidak ditemukan' }
+
+  // Update di Supabase Auth jika ada perubahan email/password
+  if (existing.auth_user_id && (input.email || input.password)) {
+    const admin = createAdminClient()
+    const authUpdate: { email?: string; password?: string } = {}
+    if (input.email && input.email !== existing.email) authUpdate.email = input.email
+    if (input.password && input.password.length >= 6) authUpdate.password = input.password
+
+    if (Object.keys(authUpdate).length > 0) {
+      const { error: updateAuthError } = await admin.auth.admin.updateUserById(
+        existing.auth_user_id,
+        authUpdate
+      )
+      if (updateAuthError) return { data: null, error: updateAuthError.message }
+    }
   }
 
-  const updateData: any = {}
-  if (input.nama)           updateData.nama = input.nama
-  if (input.email)          updateData.email = input.email
-  if (input.password)       updateData.password_hash = input.password
-  if (input.peran)          updateData.peran = input.peran
-  if (input.permisi_custom) updateData.permisi_custom = input.permisi_custom
-  if (input.permisi_menu)   updateData.permisi_menu = input.permisi_menu
+  // Update di tabel pengguna_tambahan
+  const updateData: Record<string, unknown> = {}
+  if (input.nama !== undefined)           updateData.nama = input.nama
+  if (input.email !== undefined)          updateData.email = input.email
+  if (input.password !== undefined && input.password) updateData.password_hash = input.password
+  if (input.peran !== undefined)          updateData.peran = input.peran
+  if (input.permisi_custom !== undefined) updateData.permisi_custom = input.permisi_custom
+  if (input.permisi_menu !== undefined)   updateData.permisi_menu = input.permisi_menu
 
   const { data, error } = await supabase
     .from('pengguna_tambahan')
@@ -117,17 +186,18 @@ export async function updatePenggunaTambahan(id: string, input: {
 
 // ─── DELETE ──────────────────────────────────────────────────────────────────
 export async function hapusPenggunaTambahan(id: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'Tidak terautentikasi' }
+  const { user, supabase, error: authError } = await requireOwner()
+  if (authError || !user) return { error: authError }
 
-  const { data: profile } = await supabase
-    .from('profiles').select('role').eq('id', user.id).single()
+  // Ambil auth_user_id sebelum dihapus
+  const { data: existing } = await supabase
+    .from('pengguna_tambahan')
+    .select('auth_user_id')
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .single()
 
-  if (profile?.role !== 'owner') {
-    return { error: 'Hanya SuperAdmin (owner) yang bisa menghapus pengguna tambahan' }
-  }
-
+  // Hapus dari tabel
   const { error } = await supabase
     .from('pengguna_tambahan')
     .delete()
@@ -135,6 +205,13 @@ export async function hapusPenggunaTambahan(id: string) {
     .eq('user_id', user.id)
 
   if (error) return { error: error.message }
+
+  // Hapus dari Supabase Auth
+  if (existing?.auth_user_id) {
+    const admin = createAdminClient()
+    await admin.auth.admin.deleteUser(existing.auth_user_id)
+  }
+
   revalidatePath('/pengaturan/pengguna-tambahan')
   return { error: null }
 }

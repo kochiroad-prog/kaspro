@@ -1,7 +1,7 @@
 'use server'
 
+import { getEffectiveUserId } from '@/lib/supabase/get-effective-user'
 import { revalidatePath } from 'next/cache'
-import { createClient } from '@/lib/supabase/server'
 import type { KasInput, KategoriInput, TransferInput, UnitBisnisInput, ProyekInput } from '@/types'
 
 // ============================================================
@@ -9,14 +9,13 @@ import type { KasInput, KategoriInput, TransferInput, UnitBisnisInput, ProyekInp
 // ============================================================
 
 export async function getKas() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   const { data, error } = await supabase
     .from('kas')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .eq('aktif', true)
     .order('created_at', { ascending: true })
 
@@ -24,8 +23,7 @@ export async function getKas() {
 }
 
 export async function tambahKas(input: KasInput) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   if (!input.nama) return { data: null, error: 'Nama kas wajib diisi' }
@@ -33,7 +31,7 @@ export async function tambahKas(input: KasInput) {
   const { data, error } = await supabase
     .from('kas')
     .insert({
-      user_id: user.id,
+      user_id: userId,
       nama: input.nama,
       tipe: input.tipe,
       saldo: input.saldo_awal ?? 0,
@@ -49,15 +47,14 @@ export async function tambahKas(input: KasInput) {
 }
 
 export async function updateKas(id: string, input: Partial<KasInput>) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   const { data, error } = await supabase
     .from('kas')
     .update({ nama: input.nama, tipe: input.tipe, updated_at: new Date().toISOString() })
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .select()
     .single()
 
@@ -67,8 +64,7 @@ export async function updateKas(id: string, input: Partial<KasInput>) {
 }
 
 export async function hapusKas(id: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { error: 'Tidak terautentikasi' }
 
   // Cek apakah ada transaksi di kas ini
@@ -82,7 +78,7 @@ export async function hapusKas(id: string) {
   }
 
   const { error } = await supabase
-    .from('kas').update({ aktif: false }).eq('id', id).eq('user_id', user.id)
+    .from('kas').update({ aktif: false }).eq('id', id).eq('user_id', userId)
 
   if (error) return { error: error.message }
   revalidatePath('/kas')
@@ -96,14 +92,13 @@ export async function hapusKas(id: string) {
 // ============================================================
 
 export async function getKategori(tipe?: 'pemasukan' | 'pengeluaran') {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   let query = supabase
     .from('kategori')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .order('nama', { ascending: true })
 
   if (tipe) query = query.eq('tipe', tipe)
@@ -113,15 +108,14 @@ export async function getKategori(tipe?: 'pemasukan' | 'pengeluaran') {
 }
 
 export async function tambahKategori(input: KategoriInput) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   if (!input.nama) return { data: null, error: 'Nama kategori wajib diisi' }
 
   const { data, error } = await supabase
     .from('kategori')
-    .insert({ user_id: user.id, ...input })
+    .insert({ user_id: userId, ...input })
     .select()
     .single()
 
@@ -131,12 +125,11 @@ export async function tambahKategori(input: KategoriInput) {
 }
 
 export async function hapusKategori(id: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { error: 'Tidak terautentikasi' }
 
   const { error } = await supabase
-    .from('kategori').delete().eq('id', id).eq('user_id', user.id)
+    .from('kategori').delete().eq('id', id).eq('user_id', userId)
 
   if (error) return { error: error.message }
   revalidatePath('/kategori')
@@ -148,14 +141,13 @@ export async function hapusKategori(id: string) {
 // ============================================================
 
 export async function getTransfer() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   const { data, error } = await supabase
     .from('transfer')
     .select(`*, dari_kas:dari_kas_id (id, nama), ke_kas:ke_kas_id (id, nama)`)
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .order('tanggal', { ascending: false })
     .limit(50)
 
@@ -163,8 +155,7 @@ export async function getTransfer() {
 }
 
 export async function prosesTransfer(input: TransferInput) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   if (input.dari_kas_id === input.ke_kas_id) {
@@ -176,7 +167,7 @@ export async function prosesTransfer(input: TransferInput) {
 
   // Gunakan RPC function untuk atomic transfer
   const { data, error } = await supabase.rpc('proses_transfer', {
-    p_user_id: user.id,
+    p_user_id: userId,
     p_dari_kas: input.dari_kas_id,
     p_ke_kas: input.ke_kas_id,
     p_jumlah: input.jumlah,
@@ -198,14 +189,13 @@ export async function prosesTransfer(input: TransferInput) {
 // ============================================================
 
 export async function getUnitBisnis() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   const { data, error } = await supabase
     .from('unit_bisnis')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .eq('aktif', true)
     .order('created_at', { ascending: true })
 
@@ -213,13 +203,12 @@ export async function getUnitBisnis() {
 }
 
 export async function tambahUnitBisnis(input: UnitBisnisInput) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   const { data, error } = await supabase
     .from('unit_bisnis')
-    .insert({ user_id: user.id, ...input })
+    .insert({ user_id: userId, ...input })
     .select()
     .single()
 
@@ -233,27 +222,25 @@ export async function tambahUnitBisnis(input: UnitBisnisInput) {
 // ============================================================
 
 export async function getProyek() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   const { data, error } = await supabase
     .from('proyek')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .order('created_at', { ascending: false })
 
   return { data, error: error?.message ?? null }
 }
 
 export async function tambahProyek(input: ProyekInput) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   const { data, error } = await supabase
     .from('proyek')
-    .insert({ user_id: user.id, ...input })
+    .insert({ user_id: userId, ...input })
     .select()
     .single()
 
@@ -267,14 +254,13 @@ export async function tambahProyek(input: ProyekInput) {
 // ============================================================
 
 export async function getLaporanBulanan(tahun: number) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   const { data, error } = await supabase
     .from('transaksi')
     .select('tipe, jumlah, tanggal')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .gte('tanggal', `${tahun}-01-01`)
     .lte('tanggal', `${tahun}-12-31`)
 
@@ -300,14 +286,13 @@ export async function getLaporanBulanan(tahun: number) {
 }
 
 export async function getLaporanKategori(dari: string, sampai: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   const { data, error } = await supabase
     .from('transaksi')
     .select('jumlah, kategori:kategori_id (id, nama, ikon)')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .eq('tipe', 'pengeluaran')
     .gte('tanggal', dari)
     .lte('tanggal', sampai)
@@ -337,15 +322,14 @@ export async function getLaporanKategori(dari: string, sampai: string) {
 }
 
 export async function getLaporanUnitBisnis(dari: string, sampai: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   const [unitList, txList] = await Promise.all([
-    supabase.from('unit_bisnis').select('id, nama').eq('user_id', user.id),
+    supabase.from('unit_bisnis').select('id, nama').eq('user_id', userId),
     supabase.from('transaksi')
       .select('unit_bisnis_id, tipe, jumlah')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .gte('tanggal', dari)
       .lte('tanggal', sampai),
   ])

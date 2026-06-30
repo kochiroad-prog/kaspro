@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { getEffectiveUserId } from '@/lib/supabase/get-effective-user'
 import type { CoaSearchResult } from '@/types'
 
 // ============================================================
@@ -12,8 +12,7 @@ import type { CoaSearchResult } from '@/types'
  * This is the primary search when pgvector embeddings aren't available yet
  */
 export async function searchCoaByText(query: string, limit = 10): Promise<{ data: CoaSearchResult[] | null; error: string | null }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   if (!query || query.trim().length < 2) {
@@ -26,7 +25,7 @@ export async function searchCoaByText(query: string, limit = 10): Promise<{ data
   const { data, error } = await supabase
     .from('chart_of_accounts')
     .select('id, kode, nama, deskripsi')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .eq('tipe_akun', 'detail')
     .eq('aktif', true)
     .or(searchTerms.map(t => `nama.ilike.%${t}%,deskripsi.ilike.%${t}%`).join(','))
@@ -56,12 +55,11 @@ export async function searchCoaByText(query: string, limit = 10): Promise<{ data
  * Requires embeddings to be pre-computed and stored in coa_embeddings table
  */
 export async function searchCoaSemantic(queryEmbedding: number[], limit = 5): Promise<{ data: CoaSearchResult[] | null; error: string | null }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   const { data, error } = await supabase.rpc('search_coa_semantic', {
-    p_user_id: user.id,
+    p_user_id: userId,
     p_query_embedding: queryEmbedding,
     p_limit: limit,
   })
@@ -75,8 +73,7 @@ export async function searchCoaSemantic(queryEmbedding: number[], limit = 5): Pr
  * Uses keyword matching + pattern recognition as smart fallback
  */
 export async function rekomendasiAkun(deskripsi: string): Promise<{ data: CoaSearchResult[] | null; error: string | null }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   if (!deskripsi || deskripsi.trim().length < 2) {
@@ -163,7 +160,7 @@ export async function rekomendasiAkun(deskripsi: string): Promise<{ data: CoaSea
   const { data, error } = await supabase
     .from('chart_of_accounts')
     .select('id, kode, nama, deskripsi')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .eq('tipe_akun', 'detail')
     .eq('aktif', true)
     .or(prefixArray.map(p => `kode.like.${p}%`).join(','))
@@ -189,15 +186,14 @@ export async function rekomendasiAkun(deskripsi: string): Promise<{ data: CoaSea
  * Note: Requires an embedding API endpoint or Supabase Edge Function
  */
 export async function generateCoaEmbeddings() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { error: 'Tidak terautentikasi' }
 
   // Get all detail accounts
   const { data: accounts, error } = await supabase
     .from('chart_of_accounts')
     .select('id, kode, nama, deskripsi')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .eq('tipe_akun', 'detail')
     .eq('aktif', true)
 
@@ -208,7 +204,7 @@ export async function generateCoaEmbeddings() {
   // When pgvector embeddings are configured via Edge Function or external API,
   // this function will compute actual embeddings
   const rows = accounts.map(acc => ({
-    user_id: user.id,
+    user_id: userId,
     coa_id: acc.id,
     content: `${acc.kode} ${acc.nama} ${acc.deskripsi}`.trim(),
     // embedding will be null until Edge Function computes it

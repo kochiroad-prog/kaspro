@@ -1,7 +1,7 @@
 'use server'
 
+import { getEffectiveUserId } from '@/lib/supabase/get-effective-user'
 import { revalidatePath } from 'next/cache'
-import { createClient } from '@/lib/supabase/server'
 
 export interface InvoiceItem {
   id: string
@@ -41,22 +41,20 @@ export interface InvoiceInput {
 }
 
 export async function getInvoice() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   const { data, error } = await supabase
     .from('invoice')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .order('created_at', { ascending: false })
 
   return { data, error: error?.message ?? null }
 }
 
 export async function tambahInvoice(input: InvoiceInput) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   if (!input.pelanggan) return { data: null, error: 'Nama pelanggan wajib diisi' }
@@ -65,7 +63,7 @@ export async function tambahInvoice(input: InvoiceInput) {
   const { data, error } = await supabase
     .from('invoice')
     .insert({
-      user_id: user.id,
+      user_id: userId,
       nomor: input.nomor,
       tanggal: input.tanggal,
       jatuh_tempo: input.jatuh_tempo ?? null,
@@ -87,15 +85,14 @@ export async function tambahInvoice(input: InvoiceInput) {
 }
 
 export async function updateStatusInvoice(id: string, status: 'lunas' | 'belum_lunas') {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { error: 'Tidak terautentikasi' }
 
   const { error } = await supabase
     .from('invoice')
     .update({ status })
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
 
   if (error) return { error: error.message }
   revalidatePath('/peralatan/e-invoice')
@@ -103,15 +100,14 @@ export async function updateStatusInvoice(id: string, status: 'lunas' | 'belum_l
 }
 
 export async function hapusInvoice(id: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { error: 'Tidak terautentikasi' }
 
   const { error } = await supabase
     .from('invoice')
     .delete()
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
 
   if (error) return { error: error.message }
   revalidatePath('/peralatan/e-invoice')

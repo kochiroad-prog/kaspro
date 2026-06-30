@@ -1,11 +1,10 @@
 'use server'
 
+import { getEffectiveUserId } from '@/lib/supabase/get-effective-user'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
-import { createClient } from '@/lib/supabase/server'
 
 async function checkOwnerAccess() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { ok: false, error: 'Unauthorized' }
   const allowedEmails = [
     'kochiroad@gmail.com',
@@ -98,8 +97,7 @@ export async function bayarGajiKaryawan(
 ): Promise<{ error: string | null }> {
   const access = await checkOwnerAccess()
   if (!access.ok) return { error: access.error }
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { error: 'Unauthorized' }
 
   const bulanStr = new Date(tahun, bulan - 1, 1).toLocaleString('id-ID', { month: 'long' })
@@ -107,7 +105,7 @@ export async function bayarGajiKaryawan(
   const { error } = await supabase
     .from('transaksi')
     .insert({
-      user_id: user.id,
+      user_id: userId,
       kas_id: kasId,
       kategori_id: kategoriId,
       tipe: 'pengeluaran',
@@ -129,15 +127,14 @@ export async function bayarSemuaGajiPerusahaan(
 ): Promise<{ berhasil: number; gagal: number; error: string | null }> {
   const access = await checkOwnerAccess()
   if (!access.ok) return { berhasil: 0, gagal: 0, error: access.error }
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { berhasil: 0, gagal: 0, error: 'Unauthorized' }
 
   const bulanStr = new Date(tahun, bulan - 1, 1).toLocaleString('id-ID', { month: 'long' })
   const today = new Date().toISOString().split('T')[0]
 
   const rows = karyawanList.map(k => ({
-    user_id: user.id,
+    user_id: userId,
     kas_id: kasId,
     kategori_id: kategoriId,
     tipe: 'pengeluaran',

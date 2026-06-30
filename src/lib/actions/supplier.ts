@@ -1,7 +1,7 @@
 'use server'
 
+import { getEffectiveUserId } from '@/lib/supabase/get-effective-user'
 import { revalidatePath } from 'next/cache'
-import { createClient } from '@/lib/supabase/server'
 
 export interface Supplier {
   id: string
@@ -24,22 +24,20 @@ export interface SupplierInput {
 }
 
 export async function getSupplier() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   const { data, error } = await supabase
     .from('supplier')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .order('nama', { ascending: true })
 
   return { data, error: error?.message ?? null }
 }
 
 export async function tambahSupplier(input: SupplierInput) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   if (!input.nama) return { data: null, error: 'Nama supplier wajib diisi' }
@@ -48,7 +46,7 @@ export async function tambahSupplier(input: SupplierInput) {
   const { data, error } = await supabase
     .from('supplier')
     .insert({
-      user_id: user.id,
+      user_id: userId,
       jenis: input.jenis,
       nama: input.nama,
       alamat: input.alamat ?? '',
@@ -64,15 +62,14 @@ export async function tambahSupplier(input: SupplierInput) {
 }
 
 export async function updateSupplier(id: string, input: Partial<SupplierInput>) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   const { data, error } = await supabase
     .from('supplier')
     .update({ ...input, updated_at: new Date().toISOString() })
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .select()
     .single()
 
@@ -82,15 +79,14 @@ export async function updateSupplier(id: string, input: Partial<SupplierInput>) 
 }
 
 export async function hapusSupplier(id: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { error: 'Tidak terautentikasi' }
 
   const { error } = await supabase
     .from('supplier')
     .delete()
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
 
   if (error) return { error: error.message }
   revalidatePath('/peralatan/supplier')

@@ -1,7 +1,7 @@
 'use server'
 
+import { getEffectiveUserId } from '@/lib/supabase/get-effective-user'
 import { revalidatePath } from 'next/cache'
-import { createClient } from '@/lib/supabase/server'
 import type {
   CoaInput, JurnalMemorialInput, ChartOfAccounts,
   JurnalMemorial, NeracaData, LabaRugiData, SaldoAkun
@@ -18,14 +18,13 @@ function revalidateAll() {
 // ============================================================
 
 export async function getCoa(opts?: { klasifikasi?: number; tipe_akun?: string; aktif?: boolean }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   let query = supabase
     .from('chart_of_accounts')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .order('kode', { ascending: true })
 
   if (opts?.klasifikasi) query = query.eq('klasifikasi', opts.klasifikasi)
@@ -41,8 +40,7 @@ export async function getCoaDetail() {
 }
 
 export async function tambahCoa(input: CoaInput) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   if (!input.kode || !input.nama) return { data: null, error: 'Kode dan Nama akun wajib diisi' }
@@ -56,7 +54,7 @@ export async function tambahCoa(input: CoaInput) {
   const { data, error } = await supabase
     .from('chart_of_accounts')
     .insert({
-      user_id: user.id,
+      user_id: userId,
       kode: input.kode,
       nama: input.nama,
       tipe_akun: input.tipe_akun,
@@ -76,15 +74,14 @@ export async function tambahCoa(input: CoaInput) {
 }
 
 export async function updateCoa(id: string, input: Partial<CoaInput>) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   const { data, error } = await supabase
     .from('chart_of_accounts')
     .update({ ...input, updated_at: new Date().toISOString() })
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .select()
     .single()
 
@@ -94,8 +91,7 @@ export async function updateCoa(id: string, input: Partial<CoaInput>) {
 }
 
 export async function hapusCoa(id: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { error: 'Tidak terautentikasi' }
 
   // Cek apakah ada jurnal detail yang merujuk akun ini
@@ -112,7 +108,7 @@ export async function hapusCoa(id: string) {
     .from('chart_of_accounts')
     .update({ aktif: false, updated_at: new Date().toISOString() })
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
 
   if (error) return { error: error.message }
   revalidateAll()
@@ -120,21 +116,20 @@ export async function hapusCoa(id: string) {
 }
 
 export async function seedCoaDefault() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { error: 'Tidak terautentikasi' }
 
   // Cek apakah sudah punya CoA
   const { count } = await supabase
     .from('chart_of_accounts')
     .select('*', { count: 'exact', head: true })
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
 
   if (count && count > 0) {
     return { error: 'CoA default sudah ada. Hapus semua akun terlebih dahulu untuk reset.' }
   }
 
-  const { error } = await supabase.rpc('seed_coa_default', { p_user_id: user.id })
+  const { error } = await supabase.rpc('seed_coa_default', { p_user_id: userId })
   if (error) return { error: error.message }
 
   revalidateAll()
@@ -151,14 +146,13 @@ export async function getJurnalMemorial(opts?: {
   sampai_tanggal?: string
   limit?: number
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   let query = supabase
     .from('jurnal_memorial')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .order('tanggal', { ascending: false })
     .order('created_at', { ascending: false })
 
@@ -172,23 +166,21 @@ export async function getJurnalMemorial(opts?: {
 }
 
 export async function getJurnalDetail(jurnalId: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   const { data, error } = await supabase
     .from('jurnal_memorial_detail')
     .select('*')
     .eq('jurnal_id', jurnalId)
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .order('urutan', { ascending: true })
 
   return { data, error: error?.message ?? null }
 }
 
 export async function tambahJurnalMemorial(input: JurnalMemorialInput) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   if (!input.details || input.details.length === 0) {
@@ -208,13 +200,13 @@ export async function tambahJurnalMemorial(input: JurnalMemorialInput) {
   }
 
   // Generate nomor jurnal
-  const { data: nomor } = await supabase.rpc('generate_nomor_jurnal', { p_user_id: user.id })
+  const { data: nomor } = await supabase.rpc('generate_nomor_jurnal', { p_user_id: userId })
 
   // Insert jurnal header
   const { data: jurnal, error: jurnalErr } = await supabase
     .from('jurnal_memorial')
     .insert({
-      user_id: user.id,
+      user_id: userId,
       nomor: nomor || `JM-${new Date().getTime()}`,
       tanggal: input.tanggal,
       keterangan: input.keterangan,
@@ -222,7 +214,7 @@ export async function tambahJurnalMemorial(input: JurnalMemorialInput) {
       total_debit: totalDebit,
       total_kredit: totalKredit,
       status: 'draft',
-      created_by: user.id,
+      created_by: userId,
     })
     .select()
     .single()
@@ -232,7 +224,7 @@ export async function tambahJurnalMemorial(input: JurnalMemorialInput) {
   // Insert detail lines
   const detailRows = input.details.map((d, i) => ({
     jurnal_id: jurnal.id,
-    user_id: user.id,
+    user_id: userId,
     coa_id: d.coa_id,
     kode_akun: d.kode_akun,
     nama_akun: d.nama_akun,
@@ -254,13 +246,12 @@ export async function tambahJurnalMemorial(input: JurnalMemorialInput) {
 }
 
 export async function postJurnal(jurnalId: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { error: 'Tidak terautentikasi' }
 
   const { data, error } = await supabase.rpc('post_jurnal_memorial', {
     p_jurnal_id: jurnalId,
-    p_user_id: user.id,
+    p_user_id: userId,
   })
 
   if (error) return { error: error.message }
@@ -271,13 +262,12 @@ export async function postJurnal(jurnalId: string) {
 }
 
 export async function voidJurnal(jurnalId: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { error: 'Tidak terautentikasi' }
 
   const { data, error } = await supabase.rpc('void_jurnal_memorial', {
     p_jurnal_id: jurnalId,
-    p_user_id: user.id,
+    p_user_id: userId,
   })
 
   if (error) return { error: error.message }
@@ -292,12 +282,11 @@ export async function voidJurnal(jurnalId: string) {
 // ============================================================
 
 export async function getNeraca(tanggal?: string): Promise<{ data: NeracaData | null; error: string | null }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   const { data, error } = await supabase.rpc('get_neraca', {
-    p_user_id: user.id,
+    p_user_id: userId,
     p_tanggal: tanggal || new Date().toISOString().split('T')[0],
   })
 
@@ -306,12 +295,11 @@ export async function getNeraca(tanggal?: string): Promise<{ data: NeracaData | 
 }
 
 export async function getLabaRugi(dari: string, sampai: string): Promise<{ data: LabaRugiData | null; error: string | null }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   const { data, error } = await supabase.rpc('get_laba_rugi', {
-    p_user_id: user.id,
+    p_user_id: userId,
     p_dari: dari,
     p_sampai: sampai,
   })
@@ -322,14 +310,13 @@ export async function getLabaRugi(dari: string, sampai: string): Promise<{ data:
 
 // Get saldo per akun detail (for neraca detail view)
 export async function getSaldoPerAkun(klasifikasi?: number): Promise<{ data: SaldoAkun[] | null; error: string | null }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   let query = supabase
     .from('chart_of_accounts')
     .select('id, kode, nama, klasifikasi, saldo_normal')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .eq('tipe_akun', 'detail')
     .eq('aktif', true)
     .order('kode', { ascending: true })
@@ -343,13 +330,13 @@ export async function getSaldoPerAkun(klasifikasi?: number): Promise<{ data: Sal
   const { data: details } = await supabase
     .from('jurnal_memorial_detail')
     .select('coa_id, debit, kredit, jurnal_id')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
 
   // Get only posted journals
   const { data: journals } = await supabase
     .from('jurnal_memorial')
     .select('id')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .eq('status', 'posted')
 
   const postedIds = new Set((journals ?? []).map(j => j.id))
@@ -377,28 +364,26 @@ export async function getSaldoPerAkun(klasifikasi?: number): Promise<{ data: Sal
 // ============================================================
 
 export async function getKategoriCoaMapping() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   const { data, error } = await supabase
     .from('kategori_coa_mapping')
     .select('*, kategori:kategori_id (id, nama, tipe, ikon), coa:coa_id (id, kode, nama)')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
 
   return { data, error: error?.message ?? null }
 }
 
 export async function setKategoriCoaMapping(kategoriId: string, coaId: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { error: 'Tidak terautentikasi' }
 
   // Upsert
   const { error } = await supabase
     .from('kategori_coa_mapping')
     .upsert({
-      user_id: user.id,
+      user_id: userId,
       kategori_id: kategoriId,
       coa_id: coaId,
     }, { onConflict: 'user_id,kategori_id' })
@@ -413,19 +398,18 @@ export async function setKategoriCoaMapping(kategoriId: string, coaId: string) {
 // ============================================================
 
 export async function getDashboardStatsV2() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return null
 
   const hari_ini = new Date().toISOString().split('T')[0]
   const awal_bulan = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]
 
   const [kasResult, hariIniResult, bulanIniResult, neracaResult, plResult] = await Promise.all([
-    supabase.from('kas').select('saldo').eq('user_id', user.id).eq('aktif', true),
-    supabase.from('transaksi').select('tipe, jumlah').eq('user_id', user.id).eq('tanggal', hari_ini),
-    supabase.from('transaksi').select('tipe, jumlah').eq('user_id', user.id).gte('tanggal', awal_bulan),
-    supabase.rpc('get_neraca', { p_user_id: user.id, p_tanggal: hari_ini }),
-    supabase.rpc('get_laba_rugi', { p_user_id: user.id, p_dari: awal_bulan, p_sampai: hari_ini }),
+    supabase.from('kas').select('saldo').eq('user_id', userId).eq('aktif', true),
+    supabase.from('transaksi').select('tipe, jumlah').eq('user_id', userId).eq('tanggal', hari_ini),
+    supabase.from('transaksi').select('tipe, jumlah').eq('user_id', userId).gte('tanggal', awal_bulan),
+    supabase.rpc('get_neraca', { p_user_id: userId, p_tanggal: hari_ini }),
+    supabase.rpc('get_laba_rugi', { p_user_id: userId, p_dari: awal_bulan, p_sampai: hari_ini }),
   ])
 
   const total_saldo = (kasResult.data ?? []).reduce((s, k) => s + k.saldo, 0)
@@ -462,14 +446,13 @@ export async function getDashboardStatsV2() {
 // ============================================================
 
 export async function getAuditTrail(limit = 50) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, userId, supabase } = await getEffectiveUserId()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   const { data, error } = await supabase
     .from('audit_trail')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(limit)
 
