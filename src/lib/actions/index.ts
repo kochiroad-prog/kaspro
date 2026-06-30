@@ -217,6 +217,38 @@ export async function tambahUnitBisnis(input: UnitBisnisInput) {
   return { data, error: null }
 }
 
+export async function updateUnitBisnis(id: string, input: UnitBisnisInput) {
+  const { user, userId, supabase } = await getEffectiveUserId()
+  if (!user) return { data: null, error: 'Tidak terautentikasi' }
+
+  const { data, error } = await supabase
+    .from('unit_bisnis')
+    .update({ ...input, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('user_id', userId)
+    .select()
+    .single()
+
+  if (error) return { data: null, error: error.message }
+  revalidatePath('/unit-bisnis')
+  return { data, error: null }
+}
+
+export async function hapusUnitBisnis(id: string) {
+  const { user, userId, supabase } = await getEffectiveUserId()
+  if (!user) return { error: 'Tidak terautentikasi' }
+
+  const { error } = await supabase
+    .from('unit_bisnis')
+    .update({ aktif: false, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('user_id', userId)
+
+  if (error) return { error: error.message }
+  revalidatePath('/unit-bisnis')
+  return { error: null }
+}
+
 // ============================================================
 // PROYEK ACTIONS
 // ============================================================
@@ -247,6 +279,38 @@ export async function tambahProyek(input: ProyekInput) {
   if (error) return { data: null, error: error.message }
   revalidatePath('/proyek')
   return { data, error: null }
+}
+
+export async function updateProyek(id: string, input: ProyekInput & { status?: string }) {
+  const { user, userId, supabase } = await getEffectiveUserId()
+  if (!user) return { data: null, error: 'Tidak terautentikasi' }
+
+  const { data, error } = await supabase
+    .from('proyek')
+    .update({ ...input, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('user_id', userId)
+    .select()
+    .single()
+
+  if (error) return { data: null, error: error.message }
+  revalidatePath('/proyek')
+  return { data, error: null }
+}
+
+export async function hapusProyek(id: string) {
+  const { user, userId, supabase } = await getEffectiveUserId()
+  if (!user) return { error: 'Tidak terautentikasi' }
+
+  const { error } = await supabase
+    .from('proyek')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', userId)
+
+  if (error) return { error: error.message }
+  revalidatePath('/proyek')
+  return { error: null }
 }
 
 // ============================================================
