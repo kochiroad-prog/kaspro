@@ -51,6 +51,23 @@ export interface PermisiMenu {
   }
 }
 
+/**
+ * Cek apakah sub-user boleh melakukan aksi tulis tertentu ("mencatat_transaksi" atau
+ * "mengedit_transaksi") pada sebuah kas.
+ * - permisiCustom === null → tidak ada pembatasan (owner / peran non-Custom) → selalu true.
+ * - permisiCustom !== null → harus ada entri utk kas_id tsb, aktif=true, dan flag aksi-nya true.
+ */
+export function canWriteKas(
+  permisiCustom: PermisiKas[] | null,
+  kasId: string | null | undefined,
+  action: 'mencatat_transaksi' | 'mengedit_transaksi'
+): boolean {
+  if (permisiCustom === null) return true
+  if (!kasId) return false
+  const perm = permisiCustom.find(p => p.kas_id === kasId)
+  return !!perm && perm.aktif && !!perm[action]
+}
+
 export function defaultPermisiMenu(): PermisiMenu {
   const defaultLaporan: PermisiMenuLaporan = { aktif: false, unduh_excel: false, unduh_pdf: false, kirim_excel_email: false, kirim_pdf_email: false }
   return {

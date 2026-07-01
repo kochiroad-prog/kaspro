@@ -1,6 +1,7 @@
 'use server'
 
-import { getEffectiveUserId } from '@/lib/supabase/get-effective-user'
+import { getEffectiveUserId, getEffectiveAccess } from '@/lib/supabase/get-effective-user'
+import { canWriteKas } from '@/lib/pengguna-tambahan-types'
 import { revalidatePath } from 'next/cache'
 import type { KasInput, KategoriInput, TransferInput, UnitBisnisInput, ProyekInput } from '@/types'
 
@@ -9,16 +10,24 @@ import type { KasInput, KategoriInput, TransferInput, UnitBisnisInput, ProyekInp
 // ============================================================
 
 export async function getKas() {
-  const { user, userId, supabase } = await getEffectiveUserId()
+  const { user, userId, supabase, allowedKasIds } = await getEffectiveAccess()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
-  const { data, error } = await supabase
+  // Sub-user peran "Custom" tanpa satupun kas yg diaktifkan → tidak ada yg bisa dilihat
+  if (allowedKasIds !== null && allowedKasIds.length === 0) {
+    return { data: [], error: null }
+  }
+
+  let query = supabase
     .from('kas')
     .select('*')
     .eq('user_id', userId)
     .eq('aktif', true)
     .order('created_at', { ascending: true })
 
+  if (allowedKasIds !== null) query = query.in('id', allowedKasIds)
+
+  const { data, error } = await query
   return { data, error: error?.message ?? null }
 }
 
@@ -141,21 +150,33 @@ export async function hapusKategori(id: string) {
 // ============================================================
 
 export async function getTransfer() {
-  const { user, userId, supabase } = await getEffectiveUserId()
+  const { user, userId, supabase, allowedKasIds } = await getEffectiveAccess()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
-  const { data, error } = await supabase
+  if (allowedKasIds !== null && allowedKasIds.length === 0) {
+    return { data: [], error: null }
+  }
+
+  let query = supabase
     .from('transfer')
     .select(`*, dari_kas:dari_kas_id (id, nama), ke_kas:ke_kas_id (id, nama)`)
     .eq('user_id', userId)
     .order('tanggal', { ascending: false })
     .limit(50)
 
+  // Tampilkan transfer yang melibatkan salah satu kas yg diizinkan (asal ATAU tujuan)
+  if (allowedKasIds !== null) {
+    const list = allowedKasIds.map(id => `"${id}"`).join(',')
+    query = query.or(`dari_kas_id.in.(${list}),ke_kas_id.in.(${list})`)
+  }
+
+  const { data, error } = await query
+
   return { data, error: error?.message ?? null }
 }
 
 export async function prosesTransfer(input: TransferInput) {
-  const { user, userId, supabase } = await getEffectiveUserId()
+  const { user, userId, supabase, permisiCustom } = await getEffectiveAccess()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   if (input.dari_kas_id === input.ke_kas_id) {
@@ -163,6 +184,14 @@ export async function prosesTransfer(input: TransferInput) {
   }
   if (!input.jumlah || input.jumlah <= 0) {
     return { data: null, error: 'Jumlah transfer harus lebih dari 0' }
+  }
+
+  // Sub-user peran "Custom" harus punya izin "mencatat_transaksi" di kas asal & tujuan
+  if (!canWriteKas(permisiCustom, input.dari_kas_id, 'mencatat_transaksi')) {
+    return { data: null, error: 'Anda tidak memiliki izin mencatat transaksi di kas asal' }
+  }
+  if (!canWriteKas(permisiCustom, input.ke_kas_id, 'mencatat_transaksi')) {
+    return { data: null, error: 'Anda tidak memiliki izin mencatat transaksi di kas tujuan' }
   }
 
   // Gunakan RPC function untuk atomic transfer
@@ -318,17 +347,8 @@ export async function hapusProyek(id: string) {
 // ============================================================
 
 export async function getLaporanBulanan(tahun: number) {
-  const { user, userId, supabase } = await getEffectiveUserId()
+  const { user, userId, supabase, allowedKasIds } = await getEffectiveAccess()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
-
-  const { data, error } = await supabase
-    .from('transaksi')
-    .select('tipe, jumlah, tanggal')
-    .eq('user_id', userId)
-    .gte('tanggal', `${tahun}-01-01`)
-    .lte('tanggal', `${tahun}-12-31`)
-
-  if (error) return { data: null, error: error.message }
 
   const bulanLabels = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des']
   const result = Array.from({ length: 12 }, (_, i) => ({
@@ -338,6 +358,23 @@ export async function getLaporanBulanan(tahun: number) {
     pengeluaran: 0,
     keuntungan: 0,
   }))
+
+  if (allowedKasIds !== null && allowedKasIds.length === 0) {
+    return { data: result, error: null }
+  }
+
+  let query = supabase
+    .from('transaksi')
+    .select('tipe, jumlah, tanggal')
+    .eq('user_id', userId)
+    .gte('tanggal', `${tahun}-01-01`)
+    .lte('tanggal', `${tahun}-12-31`)
+
+  if (allowedKasIds !== null) query = query.in('kas_id', allowedKasIds)
+
+  const { data, error } = await query
+
+  if (error) return { data: null, error: error.message }
 
   for (const tx of data ?? []) {
     const bulan = new Date(tx.tanggal).getMonth()
@@ -350,16 +387,21 @@ export async function getLaporanBulanan(tahun: number) {
 }
 
 export async function getLaporanKategori(dari: string, sampai: string) {
-  const { user, userId, supabase } = await getEffectiveUserId()
+  const { user, userId, supabase, allowedKasIds } = await getEffectiveAccess()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
+  if (allowedKasIds !== null && allowedKasIds.length === 0) return { data: [], error: null }
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('transaksi')
     .select('jumlah, kategori:kategori_id (id, nama, ikon)')
     .eq('user_id', userId)
     .eq('tipe', 'pengeluaran')
     .gte('tanggal', dari)
     .lte('tanggal', sampai)
+
+  if (allowedKasIds !== null) query = query.in('kas_id', allowedKasIds)
+
+  const { data, error } = await query
 
   if (error) return { data: null, error: error.message }
 
@@ -386,16 +428,20 @@ export async function getLaporanKategori(dari: string, sampai: string) {
 }
 
 export async function getLaporanUnitBisnis(dari: string, sampai: string) {
-  const { user, userId, supabase } = await getEffectiveUserId()
+  const { user, userId, supabase, allowedKasIds } = await getEffectiveAccess()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
+  if (allowedKasIds !== null && allowedKasIds.length === 0) return { data: [], error: null }
+
+  let txQuery = supabase.from('transaksi')
+    .select('unit_bisnis_id, tipe, jumlah')
+    .eq('user_id', userId)
+    .gte('tanggal', dari)
+    .lte('tanggal', sampai)
+  if (allowedKasIds !== null) txQuery = txQuery.in('kas_id', allowedKasIds)
 
   const [unitList, txList] = await Promise.all([
     supabase.from('unit_bisnis').select('id, nama').eq('user_id', userId),
-    supabase.from('transaksi')
-      .select('unit_bisnis_id, tipe, jumlah')
-      .eq('user_id', userId)
-      .gte('tanggal', dari)
-      .lte('tanggal', sampai),
+    txQuery,
   ])
 
   const result = (unitList.data ?? []).map(u => {

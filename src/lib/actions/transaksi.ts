@@ -1,6 +1,7 @@
 'use server'
 
-import { getEffectiveUserId } from '@/lib/supabase/get-effective-user'
+import { getEffectiveUserId, getEffectiveAccess } from '@/lib/supabase/get-effective-user'
+import { canWriteKas } from '@/lib/pengguna-tambahan-types'
 import { revalidatePath } from 'next/cache'
 import type { TransaksiInput } from '@/types'
 
@@ -18,8 +19,13 @@ export async function getTransaksi(params?: {
   limit?: number
   offset?: number
 }) {
-  const { user, userId, supabase } = await getEffectiveUserId()
+  const { user, userId, supabase, allowedKasIds } = await getEffectiveAccess()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
+
+  // Sub-user peran "Custom" tanpa satupun kas yg diaktifkan → tidak ada riwayat yg bisa dilihat
+  if (allowedKasIds !== null && allowedKasIds.length === 0) {
+    return { data: [], error: null }
+  }
 
   let query = supabase
     .from('transaksi')
@@ -33,6 +39,11 @@ export async function getTransaksi(params?: {
     .eq('user_id', userId)
     .order('tanggal', { ascending: false })
     .order('created_at', { ascending: false })
+
+  // Batasi ke kas yang diizinkan untuk sub-user peran "Custom".
+  // Tetap aman digabung dengan filter kas_id manual di bawah (AND) — kalau
+  // pengguna memilih kas yang tidak diizinkan, hasilnya otomatis kosong.
+  if (allowedKasIds !== null) query = query.in('kas_id', allowedKasIds)
 
   if (params?.tipe) query = query.eq('tipe', params.tipe)
   if (params?.kas_id) query = query.eq('kas_id', params.kas_id)
@@ -52,13 +63,18 @@ export async function getTransaksi(params?: {
 // TAMBAH TRANSAKSI
 // ============================================================
 export async function tambahTransaksi(input: TransaksiInput) {
-  const { user, userId, supabase } = await getEffectiveUserId()
+  const { user, userId, supabase, permisiCustom } = await getEffectiveAccess()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   // Validasi
   if (!input.kas_id) return { data: null, error: 'Pilih kas terlebih dahulu' }
   if (!input.jumlah || input.jumlah <= 0) return { data: null, error: 'Jumlah harus lebih dari 0' }
   if (!input.tipe) return { data: null, error: 'Pilih tipe transaksi' }
+
+  // Sub-user peran "Custom" harus punya izin "mencatat_transaksi" utk kas yg dipilih
+  if (!canWriteKas(permisiCustom, input.kas_id, 'mencatat_transaksi')) {
+    return { data: null, error: 'Anda tidak memiliki izin mencatat transaksi di kas ini' }
+  }
 
   // Cek saldo jika pengeluaran
   if (input.tipe === 'pengeluaran') {
@@ -104,8 +120,27 @@ export async function tambahTransaksi(input: TransaksiInput) {
 // UPDATE TRANSAKSI
 // ============================================================
 export async function updateTransaksi(id: string, input: Partial<TransaksiInput>) {
-  const { user, userId, supabase } = await getEffectiveUserId()
+  const { user, userId, supabase, permisiCustom } = await getEffectiveAccess()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
+
+  // Sub-user peran "Custom" harus punya izin "mengedit_transaksi" di kas transaksi ini berada
+  if (permisiCustom !== null) {
+    const { data: existing } = await supabase
+      .from('transaksi')
+      .select('kas_id')
+      .eq('id', id)
+      .eq('user_id', userId)
+      .single()
+
+    if (!canWriteKas(permisiCustom, existing?.kas_id, 'mengedit_transaksi')) {
+      return { data: null, error: 'Anda tidak memiliki izin mengedit transaksi di kas ini' }
+    }
+    // Kalau kas_id diganti ke kas lain, kas tujuan juga harus punya izin mencatat_transaksi
+    if (input.kas_id && input.kas_id !== existing?.kas_id &&
+        !canWriteKas(permisiCustom, input.kas_id, 'mencatat_transaksi')) {
+      return { data: null, error: 'Anda tidak memiliki izin mencatat transaksi di kas tujuan' }
+    }
+  }
 
   const { data, error } = await supabase
     .from('transaksi')
@@ -128,8 +163,22 @@ export async function updateTransaksi(id: string, input: Partial<TransaksiInput>
 // HAPUS TRANSAKSI
 // ============================================================
 export async function hapusTransaksi(id: string) {
-  const { user, userId, supabase } = await getEffectiveUserId()
+  const { user, userId, supabase, permisiCustom } = await getEffectiveAccess()
   if (!user) return { error: 'Tidak terautentikasi' }
+
+  // Sub-user peran "Custom" harus punya izin "mengedit_transaksi" (mencakup hapus) di kas ini
+  if (permisiCustom !== null) {
+    const { data: existing } = await supabase
+      .from('transaksi')
+      .select('kas_id')
+      .eq('id', id)
+      .eq('user_id', userId)
+      .single()
+
+    if (!canWriteKas(permisiCustom, existing?.kas_id, 'mengedit_transaksi')) {
+      return { error: 'Anda tidak memiliki izin menghapus transaksi di kas ini' }
+    }
+  }
 
   const { error } = await supabase
     .from('transaksi')

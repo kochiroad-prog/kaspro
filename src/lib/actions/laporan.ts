@@ -1,11 +1,12 @@
 'use server'
 
-import { getEffectiveUserId } from '@/lib/supabase/get-effective-user'
+import { getEffectiveAccess } from '@/lib/supabase/get-effective-user'
 
 // ─── Get transaksi untuk periode laporan ─────────────────────
 export async function getTransaksiPeriode(dari: string, sampai: string, kas_id?: string) {
-  const { user, userId, supabase } = await getEffectiveUserId()
+  const { user, userId, supabase, allowedKasIds } = await getEffectiveAccess()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
+  if (allowedKasIds !== null && allowedKasIds.length === 0) return { data: [], error: null }
 
   let query = supabase
     .from('transaksi')
@@ -20,6 +21,7 @@ export async function getTransaksiPeriode(dari: string, sampai: string, kas_id?:
     .order('tanggal', { ascending: false })
     .order('created_at', { ascending: false })
 
+  if (allowedKasIds !== null) query = query.in('kas_id', allowedKasIds)
   if (kas_id && kas_id !== 'semua') query = query.eq('kas_id', kas_id)
 
   const { data, error } = await query
@@ -28,8 +30,9 @@ export async function getTransaksiPeriode(dari: string, sampai: string, kas_id?:
 
 // ─── Get transfer untuk periode laporan ──────────────────────
 export async function getTransferPeriode(dari: string, sampai: string, kas_id?: string) {
-  const { user, userId, supabase } = await getEffectiveUserId()
+  const { user, userId, supabase, allowedKasIds } = await getEffectiveAccess()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
+  if (allowedKasIds !== null && allowedKasIds.length === 0) return { data: [], error: null }
 
   let query = supabase
     .from('transfer')
@@ -44,6 +47,11 @@ export async function getTransferPeriode(dari: string, sampai: string, kas_id?: 
     .order('tanggal', { ascending: false })
     .order('created_at', { ascending: false })
 
+  if (allowedKasIds !== null) {
+    const list = allowedKasIds.map(id => `"${id}"`).join(',')
+    query = query.or(`dari_kas_id.in.(${list}),ke_kas_id.in.(${list})`)
+  }
+
   if (kas_id && kas_id !== 'semua') {
     query = query.or(`dari_kas_id.eq.${kas_id},ke_kas_id.eq.${kas_id}`)
   }
@@ -54,11 +62,13 @@ export async function getTransferPeriode(dari: string, sampai: string, kas_id?: 
 
 // ─── Get saldo awal sebelum periode ──────────────────────────
 export async function getSaldoAwalPeriode(dari: string, kas_id?: string) {
-  const { user, userId, supabase } = await getEffectiveUserId()
+  const { user, userId, supabase, allowedKasIds } = await getEffectiveAccess()
   if (!user) return { saldo: 0 }
+  if (allowedKasIds !== null && allowedKasIds.length === 0) return { saldo: 0 }
 
   // Hitung dari saldo current kas dikurangi selisih transaksi setelah tanggal dari
   let kasQuery = supabase.from('kas').select('id, saldo').eq('user_id', userId).eq('aktif', true)
+  if (allowedKasIds !== null) kasQuery = kasQuery.in('id', allowedKasIds)
   if (kas_id && kas_id !== 'semua') kasQuery = kasQuery.eq('id', kas_id)
   const { data: kasData } = await kasQuery
 
@@ -66,6 +76,7 @@ export async function getSaldoAwalPeriode(dari: string, kas_id?: string) {
 
   // Transaksi setelah periode
   let txAfter = supabase.from('transaksi').select('tipe, jumlah').eq('user_id', userId).gte('tanggal', dari)
+  if (allowedKasIds !== null) txAfter = txAfter.in('kas_id', allowedKasIds)
   if (kas_id && kas_id !== 'semua') txAfter = txAfter.eq('kas_id', kas_id)
   const { data: txAfterData } = await txAfter
 

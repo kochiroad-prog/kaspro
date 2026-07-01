@@ -1,6 +1,6 @@
 'use server'
 
-import { getEffectiveUserId } from '@/lib/supabase/get-effective-user'
+import { getEffectiveUserId, getEffectiveAccess } from '@/lib/supabase/get-effective-user'
 import { revalidatePath } from 'next/cache'
 import type {
   CoaInput, JurnalMemorialInput, ChartOfAccounts,
@@ -398,16 +398,28 @@ export async function setKategoriCoaMapping(kategoriId: string, coaId: string) {
 // ============================================================
 
 export async function getDashboardStatsV2() {
-  const { user, userId, supabase } = await getEffectiveUserId()
+  const { user, userId, supabase, allowedKasIds } = await getEffectiveAccess()
   if (!user) return null
 
   const hari_ini = new Date().toISOString().split('T')[0]
   const awal_bulan = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]
 
+  let kasQuery = supabase.from('kas').select('saldo').eq('user_id', userId).eq('aktif', true)
+  let hariIniQuery = supabase.from('transaksi').select('tipe, jumlah').eq('user_id', userId).eq('tanggal', hari_ini)
+  let bulanIniQuery = supabase.from('transaksi').select('tipe, jumlah').eq('user_id', userId).gte('tanggal', awal_bulan)
+
+  // Sub-user peran "Custom" → batasi saldo & transaksi ke kas yang diizinkan saja.
+  // Neraca/Laba-Rugi (akuntansi double-entry) tetap tampil apa adanya — di luar cakupan izin per-kas.
+  if (allowedKasIds !== null) {
+    kasQuery = kasQuery.in('id', allowedKasIds)
+    hariIniQuery = hariIniQuery.in('kas_id', allowedKasIds)
+    bulanIniQuery = bulanIniQuery.in('kas_id', allowedKasIds)
+  }
+
   const [kasResult, hariIniResult, bulanIniResult, neracaResult, plResult] = await Promise.all([
-    supabase.from('kas').select('saldo').eq('user_id', userId).eq('aktif', true),
-    supabase.from('transaksi').select('tipe, jumlah').eq('user_id', userId).eq('tanggal', hari_ini),
-    supabase.from('transaksi').select('tipe, jumlah').eq('user_id', userId).gte('tanggal', awal_bulan),
+    kasQuery,
+    hariIniQuery,
+    bulanIniQuery,
     supabase.rpc('get_neraca', { p_user_id: userId, p_tanggal: hari_ini }),
     supabase.rpc('get_laba_rugi', { p_user_id: userId, p_dari: awal_bulan, p_sampai: hari_ini }),
   ])
