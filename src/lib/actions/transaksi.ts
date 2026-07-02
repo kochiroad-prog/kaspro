@@ -60,6 +60,48 @@ export async function getTransaksi(params?: {
 }
 
 // ============================================================
+// SALDO AWAL KAS (all-time, sebelum transaksi/transfer pertama tercatat)
+// ============================================================
+/**
+ * Kas.saldo adalah saldo BERJALAN yang sudah termasuk "Saldo Awal" yang diisi
+ * saat kas dibuat (field saldo_awal di form Tambah Kas) — nilai itu tidak
+ * punya baris tersendiri di tabel transaksi, jadi kalau dijumlah dari daftar
+ * transaksi saja, hasilnya bisa "kurang" dibanding kartu saldo kas.
+ * Transfer antar kas juga tersimpan di tabel terpisah dan ikut mempengaruhi
+ * saldo tanpa muncul di daftar transaksi.
+ *
+ * Fungsi ini menghitung ulang "Saldo Awal" itu secara terbalik:
+ *   saldo_awal = saldo_sekarang - (net semua transaksi) - (net semua transfer)
+ * Hasilnya selalu konsisten dengan kartu saldo kas, walau nilai aslinya
+ * tidak disimpan di kolom terpisah.
+ */
+export async function getSaldoAwalKas(kas_id: string) {
+  const { user, userId, supabase, allowedKasIds } = await getEffectiveAccess()
+  if (!user) return { saldo: 0, error: 'Tidak terautentikasi' }
+  if (allowedKasIds !== null && !allowedKasIds.includes(kas_id)) {
+    return { saldo: 0, error: 'Anda tidak memiliki akses ke kas ini' }
+  }
+
+  const [kasRes, txRes, trOutRes, trInRes] = await Promise.all([
+    supabase.from('kas').select('saldo').eq('id', kas_id).eq('user_id', userId).single(),
+    supabase.from('transaksi').select('tipe, jumlah').eq('kas_id', kas_id).eq('user_id', userId),
+    supabase.from('transfer').select('jumlah').eq('dari_kas_id', kas_id).eq('user_id', userId),
+    supabase.from('transfer').select('jumlah').eq('ke_kas_id', kas_id).eq('user_id', userId),
+  ])
+
+  const netTransaksi = (txRes.data ?? []).reduce(
+    (s, t) => s + (t.tipe === 'pemasukan' ? t.jumlah : -t.jumlah), 0
+  )
+  const netTransferKeluar = (trOutRes.data ?? []).reduce((s, t) => s + t.jumlah, 0)
+  const netTransferMasuk = (trInRes.data ?? []).reduce((s, t) => s + t.jumlah, 0)
+
+  const saldoSekarang = kasRes.data?.saldo ?? 0
+  const saldoAwal = saldoSekarang - netTransaksi - netTransferMasuk + netTransferKeluar
+
+  return { saldo: saldoAwal, error: null }
+}
+
+// ============================================================
 // TAMBAH TRANSAKSI
 // ============================================================
 export async function tambahTransaksi(input: TransaksiInput) {

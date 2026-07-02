@@ -149,11 +149,14 @@ export async function hapusKategori(id: string) {
 // TRANSFER ACTIONS
 // ============================================================
 
-export async function getTransfer() {
+export async function getTransfer(kas_id?: string) {
   const { user, userId, supabase, allowedKasIds } = await getEffectiveAccess()
   if (!user) return { data: null, error: 'Tidak terautentikasi' }
 
   if (allowedKasIds !== null && allowedKasIds.length === 0) {
+    return { data: [], error: null }
+  }
+  if (kas_id && allowedKasIds !== null && !allowedKasIds.includes(kas_id)) {
     return { data: [], error: null }
   }
 
@@ -162,7 +165,14 @@ export async function getTransfer() {
     .select(`*, dari_kas:dari_kas_id (id, nama), ke_kas:ke_kas_id (id, nama)`)
     .eq('user_id', userId)
     .order('tanggal', { ascending: false })
-    .limit(50)
+
+  // Kalau difilter ke satu kas spesifik, tampilkan riwayat lengkap (tidak dibatasi 50)
+  // supaya rekonsiliasi saldo per-kas akurat. Kalau tidak, batasi 50 terbaru seperti semula.
+  if (kas_id) {
+    query = query.or(`dari_kas_id.eq.${kas_id},ke_kas_id.eq.${kas_id}`)
+  } else {
+    query = query.limit(50)
+  }
 
   // Tampilkan transfer yang melibatkan salah satu kas yg diizinkan (asal ATAU tujuan)
   if (allowedKasIds !== null) {

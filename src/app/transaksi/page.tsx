@@ -1,5 +1,5 @@
-import { getTransaksi } from '@/lib/actions/transaksi'
-import { getKas, getKategori } from '@/lib/actions/index'
+import { getTransaksi, getSaldoAwalKas } from '@/lib/actions/transaksi'
+import { getKas, getKategori, getTransfer } from '@/lib/actions/index'
 import { getUser } from '@/lib/actions/auth'
 import { formatRupiah, formatTanggal } from '@/lib/utils'
 import AddTxButton from '@/components/forms/AddTxButton'
@@ -14,23 +14,40 @@ export default async function TransaksiPage({
   searchParams: Promise<{ tipe?: string; kas_id?: string; kategori_id?: string; dari?: string; sampai?: string; sort?: string; limit?: string; q?: string }>
 }) {
   const sp = await searchParams
-  const [txResult, kasResult, katResult, user] = await Promise.all([
+  // Kas spesifik dipilih (bukan "Semua Kas") & tanpa filter lain yg bisa bikin rekonsiliasi saldo tidak relevan
+  const kasFilterAktif = !!sp.kas_id && !sp.tipe && !sp.kategori_id && !sp.dari && !sp.sampai
+
+  const [txResult, kasResult, katResult, user, transferResult, saldoAwalResult] = await Promise.all([
     getTransaksi({
       tipe: sp.tipe as any,
       kas_id: sp.kas_id,
       kategori_id: sp.kategori_id,
       dari_tanggal: sp.dari,
       sampai_tanggal: sp.sampai,
-      limit: sp.limit ? parseInt(sp.limit) : 100,
+      // Saat 1 kas spesifik dipilih (mode rekonsiliasi saldo), jangan dibatasi 100 —
+      // supaya "Total Masuk/Keluar" & Saldo Awal yang dihitung selalu cocok dgn saldo kas.
+      limit: sp.limit ? parseInt(sp.limit) : (kasFilterAktif ? undefined : 100),
     }),
     getKas(),
     getKategori(),
     getUser(),
+    kasFilterAktif ? getTransfer(sp.kas_id) : Promise.resolve({ data: [], error: null }),
+    kasFilterAktif ? getSaldoAwalKas(sp.kas_id!) : Promise.resolve({ saldo: 0, error: null }),
   ])
 
   const txList = txResult.data ?? []
+  const transferList = transferResult.data ?? []
+  const saldoAwal = saldoAwalResult.saldo ?? 0
+  const kasDipilih = kasFilterAktif ? (kasResult.data ?? []).find(k => k.id === sp.kas_id) : null
+
+  // Total pemasukan/pengeluaran murni dari transaksi (utk kartu ringkasan seperti semula)
   const totalMasuk = txList.filter(t => t.tipe === 'pemasukan').reduce((s, t) => s + t.jumlah, 0)
   const totalKeluar = txList.filter(t => t.tipe === 'pengeluaran').reduce((s, t) => s + t.jumlah, 0)
+
+  // Termasuk transfer, dipakai utk rekonsiliasi saldo saat 1 kas dipilih
+  const transferMasuk = transferList.filter(t => t.ke_kas_id === sp.kas_id).reduce((s, t) => s + t.jumlah, 0)
+  const transferKeluar = transferList.filter(t => t.dari_kas_id === sp.kas_id).reduce((s, t) => s + t.jumlah, 0)
+  const saldoAkhirHitung = saldoAwal + totalMasuk - totalKeluar + transferMasuk - transferKeluar
 
   const exportData = txList.map(tx => ({
     tanggal: formatTanggal(tx.tanggal),
@@ -84,6 +101,31 @@ export default async function TransaksiPage({
         </div>
       </div>
 
+      {/* Rekonsiliasi saldo — hanya muncul saat 1 kas spesifik dipilih tanpa filter lain.
+          Menjawab "kenapa nominal di kartu kas beda dgn total di riwayat transaksi":
+          kartu = Saldo Awal + transaksi + transfer, sedangkan tabel di bawah cuma transaksi. */}
+      {kasFilterAktif && kasDipilih && (
+        <div className="card p-4" style={{ background: 'var(--brand-light)' }}>
+          <p className="text-sm font-bold mb-2" style={{ color: 'var(--text)' }}>
+            Rekonsiliasi Saldo — {kasDipilih.nama}
+          </p>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm" style={{ color: 'var(--text-muted)' }}>
+            <span>Saldo Awal <strong style={{ color: 'var(--text)' }}>{formatRupiah(saldoAwal)}</strong></span>
+            <span>+</span>
+            <span>Masuk (termasuk transfer) <strong style={{ color: 'var(--inc)' }}>{formatRupiah(totalMasuk + transferMasuk)}</strong></span>
+            <span>−</span>
+            <span>Keluar (termasuk transfer) <strong style={{ color: 'var(--exp)' }}>{formatRupiah(totalKeluar + transferKeluar)}</strong></span>
+            <span>=</span>
+            <span>Saldo Akhir <strong style={{ color: 'var(--text)' }}>{formatRupiah(saldoAkhirHitung)}</strong></span>
+          </div>
+          {saldoAkhirHitung !== kasDipilih.saldo && (
+            <p className="text-xs mt-2 font-semibold" style={{ color: 'var(--exp)' }}>
+              ⚠ Hasil hitung ({formatRupiah(saldoAkhirHitung)}) tidak sama dengan saldo di kartu kas ({formatRupiah(kasDipilih.saldo)}) — kemungkinan ada transaksi/transfer yg belum tercatat lengkap.
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Filter */}
       <form method="GET" className="card p-4 flex flex-wrap gap-3 items-end">
         <div>
@@ -125,7 +167,12 @@ export default async function TransaksiPage({
       </form>
 
       {/* Tabel Transaksi */}
-      <TransaksiTable txList={txList} />
+      <TransaksiTable
+        txList={txList}
+        transferList={kasFilterAktif ? transferList : []}
+        kasIdFilter={kasFilterAktif ? sp.kas_id : undefined}
+        saldoAwal={kasFilterAktif ? saldoAwal : undefined}
+      />
     </div>
   )
 }
