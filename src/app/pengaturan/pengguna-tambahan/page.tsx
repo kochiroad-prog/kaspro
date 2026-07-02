@@ -61,6 +61,18 @@ function emptyPermisiKas(kas: Kas): PermisiKas {
   }
 }
 
+/**
+ * Gabungkan izin per-kas yang SUDAH tersimpan (mis. dari pengguna tambahan yang lama)
+ * dengan daftar kas yang AKTIF SAAT INI. Tanpa ini, kas yang baru dibuat setelah
+ * pengguna tambahan itu terakhir disimpan tidak akan pernah muncul di form edit —
+ * karena sebelumnya daftar izin diambil apa adanya dari data lama tanpa direkonsiliasi
+ * dengan kasList terbaru.
+ */
+function mergeKasPermisi(existing: PermisiKas[] | null | undefined, kasList: Kas[]): PermisiKas[] {
+  const existingMap = new Map((existing ?? []).map(p => [p.kas_id, p]))
+  return kasList.map(kas => existingMap.get(kas.id) ?? emptyPermisiKas(kas))
+}
+
 export default function PenggunaTambahanPage() {
   const [daftar, setDaftar] = useState<PenggunaTambahan[]>([])
   const [kasList, setKasList] = useState<Kas[]>([])
@@ -89,7 +101,7 @@ export default function PenggunaTambahanPage() {
 
   useEffect(() => {
     if (peran === 'Custom' && permisiList.length === 0) {
-      setPermisiList(kasList.map(emptyPermisiKas))
+      setPermisiList(mergeKasPermisi(null, kasList))
     }
   }, [peran, kasList])
 
@@ -99,14 +111,29 @@ export default function PenggunaTambahanPage() {
     setEditingId(null); setShowForm(false); setMsg('')
   }
 
-  function startEdit(u: PenggunaTambahan) {
+  // Ambil ulang daftar kas terbaru dari server (bukan dari state lama) —
+  // dipanggil setiap form dibuka supaya kas yang baru saja dibuat pasti ikut muncul.
+  async function refreshKasList(): Promise<Kas[]> {
+    const kasRes = await getKas()
+    const fresh = kasRes.data ?? []
+    setKasList(fresh)
+    return fresh
+  }
+
+  async function startEdit(u: PenggunaTambahan) {
+    const freshKasList = await refreshKasList()
     setEditingId(u.id)
     setNama(u.nama); setEmail(u.email); setPassword('')
     setPeran(u.peran)
-    setPermisiList(u.permisi_custom ?? kasList.map(emptyPermisiKas))
+    setPermisiList(mergeKasPermisi(u.permisi_custom, freshKasList))
     setPermisiMenu(u.permisi_menu ?? defaultPermisiMenu())
     setShowForm(true)
     window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  async function openTambahForm() {
+    await refreshKasList()
+    setShowForm(true)
   }
 
   function toggleKasAktif(kasId: string, val: boolean) {
@@ -185,7 +212,7 @@ export default function PenggunaTambahanPage() {
           </div>
         </div>
         {!showForm && (
-          <button onClick={() => setShowForm(true)} className="px-4 py-2 rounded text-sm font-semibold text-white" style={{ background: 'var(--brand)' }}>
+          <button onClick={openTambahForm} className="px-4 py-2 rounded text-sm font-semibold text-white" style={{ background: 'var(--brand)' }}>
             Buat Pengguna Tambahan »
           </button>
         )}
